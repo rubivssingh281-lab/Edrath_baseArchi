@@ -1,6 +1,7 @@
 #include "BlackClock/BlackClockComponent.h"
 #include "BlackClock/EchoCombatComponent.h"
 #include "BlackClock/PossibilityShiftActor.h"
+#include "Core/EdrathHardwareOptimizationSubsystem.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -55,6 +56,14 @@ bool UBlackClockComponent::TogglePossibilityShift(EEdrathRegion CurrentRegion)
     {
         ActiveTimelineState = ETimelineState::PresentTimeline;
     }
+    if (UGameInstance* GameInstance = GetWorld()->GetGameInstance())
+    {
+        if (UEdrathHardwareOptimizationSubsystem* HardwareOptimization =
+            GameInstance->GetSubsystem<UEdrathHardwareOptimizationSubsystem>())
+        {
+            HardwareOptimization->OptimizeTimelineMemoryFootprint(ActiveTimelineState);
+        }
+    }
 
     TArray<AActor*> ShiftActors;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), APossibilityShiftActor::StaticClass(), ShiftActors);
@@ -82,6 +91,11 @@ bool UBlackClockComponent::EnterMemoryReconstruction(FGameplayTag MemoryAnchorTa
     if (UEdrathNarrativeSubsystem* Narrative = GetWorld()->GetGameInstance()->GetSubsystem<UEdrathNarrativeSubsystem>())
     {
         Narrative->RecordRecoveredMemory(MemoryAnchorTag, OriginalMemoryOwnerNPC);
+    }
+    if (UEdrathHardwareOptimizationSubsystem* HardwareOptimization =
+        GetWorld()->GetGameInstance()->GetSubsystem<UEdrathHardwareOptimizationSubsystem>())
+    {
+        HardwareOptimization->OptimizeTimelineMemoryFootprint(ActiveTimelineState);
     }
     OnTimelineStateShifted.Broadcast(ActiveTimelineState, GetOwner() ? GetOwner()->GetActorLocation() : FVector::ZeroVector, PossibilityWaveMaxRadius);
     return true;

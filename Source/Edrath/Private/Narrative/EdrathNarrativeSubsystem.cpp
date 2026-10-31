@@ -66,6 +66,58 @@ void UEdrathNarrativeSubsystem::AddOrMutateEvidence(FGameplayTag EvidenceTag, FT
     Record.bIsForeshadowingTwistClue = bIsTwistClue;
 }
 
+void UEdrathNarrativeSubsystem::RecordForestMutation(FGameplayTag MutationTag, FText MutationDescription)
+{
+    int32& MutationVersion = ForestMutationVersions.FindOrAdd(MutationTag);
+    ++MutationVersion;
+    AddOrMutateEvidence(MutationTag, MoveTemp(MutationDescription), true);
+    OnForestMutationChanged.Broadcast(MutationTag, MutationVersion);
+}
+
+int32 UEdrathNarrativeSubsystem::GetForestMutationVersion(FGameplayTag MutationTag) const
+{
+    return ForestMutationVersions.FindRef(MutationTag);
+}
+
+void UEdrathNarrativeSubsystem::RegisterLivingNpcMemory(FGuid LivingNpcId, FText InitialMemoryDescription)
+{
+    if (LivingNpcId.IsValid())
+    {
+        LivingNpcMemoryRegistry.FindOrAdd(LivingNpcId) = MoveTemp(InitialMemoryDescription);
+    }
+}
+
+void UEdrathNarrativeSubsystem::MutateLivingNpcMemory(FGuid LivingNpcId, FText NewMemoryDescription)
+{
+    if (LivingNpcId.IsValid())
+    {
+        LivingNpcMemoryRegistry.Add(LivingNpcId, NewMemoryDescription);
+        OnLivingNpcMemoryMutated.Broadcast(LivingNpcId, NewMemoryDescription);
+    }
+}
+
+FText UEdrathNarrativeSubsystem::GetLivingNpcMemory(FGuid LivingNpcId) const
+{
+    if (const FText* Memory = LivingNpcMemoryRegistry.Find(LivingNpcId))
+    {
+        return *Memory;
+    }
+    return FText::GetEmpty();
+}
+
+void UEdrathNarrativeSubsystem::AddUnchosenPossibilityTag(FGameplayTag PossibilityTag)
+{
+    if (PossibilityTag.IsValid())
+    {
+        UnchosenPossibilityTags.AddUnique(PossibilityTag);
+    }
+}
+
+void UEdrathNarrativeSubsystem::RemoveUnchosenPossibilityTag(FGameplayTag PossibilityTag)
+{
+    UnchosenPossibilityTags.Remove(PossibilityTag);
+}
+
 void UEdrathNarrativeSubsystem::RegisterBlackClockActivation(EEdrathRegion Region, float InstabilityDelta)
 {
     ++ClockUsagePrunedFuturesCount;

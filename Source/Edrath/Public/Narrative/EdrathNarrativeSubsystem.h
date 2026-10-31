@@ -7,6 +7,8 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSettlementLoopReset, int32, TotalLoopResets);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBeliefWeightChanged, FGameplayTag, BuildingTag, float, NewBeliefWeight);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnForestMutationChanged, FGameplayTag, MutationTag, int32, MutationVersion);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLivingNpcMemoryMutated, FGuid, LivingNpcId, FText, NewMemoryDescription);
 
 UCLASS()
 class EDRATH_API UEdrathNarrativeSubsystem : public UGameInstanceSubsystem
@@ -40,6 +42,30 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|Evidence")
     void AddOrMutateEvidence(FGameplayTag EvidenceTag, FText NewDescription, bool bIsTwistClue);
 
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|Hollowgreen")
+    void RecordForestMutation(FGameplayTag MutationTag, FText MutationDescription);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|Hollowgreen")
+    int32 GetForestMutationVersion(FGameplayTag MutationTag) const;
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|AshenExpanse")
+    void RegisterLivingNpcMemory(FGuid LivingNpcId, FText InitialMemoryDescription);
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|AshenExpanse")
+    void MutateLivingNpcMemory(FGuid LivingNpcId, FText NewMemoryDescription);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|AshenExpanse")
+    FText GetLivingNpcMemory(FGuid LivingNpcId) const;
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|UnwrittenSea")
+    void AddUnchosenPossibilityTag(FGameplayTag PossibilityTag);
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|UnwrittenSea")
+    void RemoveUnchosenPossibilityTag(FGameplayTag PossibilityTag);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|UnwrittenSea")
+    TArray<FGameplayTag> GetUnchosenPossibilityTags() const { return UnchosenPossibilityTags; }
+
     UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|Instability")
     void RegisterBlackClockActivation(EEdrathRegion Region, float InstabilityDelta);
 
@@ -64,6 +90,12 @@ public:
     UPROPERTY(BlueprintAssignable, Category="Edrath|Narrative")
     FOnBeliefWeightChanged OnBeliefWeightChanged;
 
+    UPROPERTY(BlueprintAssignable, Category="Edrath|Narrative|Hollowgreen")
+    FOnForestMutationChanged OnForestMutationChanged;
+
+    UPROPERTY(BlueprintAssignable, Category="Edrath|Narrative|AshenExpanse")
+    FOnLivingNpcMemoryMutated OnLivingNpcMemoryMutated;
+
 private:
     int32 CurrentSettlementDay = 1;
     int32 SettlementLoopResetCount = 0;
@@ -73,6 +105,9 @@ private:
     TMap<FGameplayTag, float> BuildingBeliefWeights;
     TMap<FGameplayTag, FName> MemoryTrueOwnerRegistry;
     TMap<FGameplayTag, FEdrathEvidenceRecord> EvidenceRegistry;
+    TMap<FGameplayTag, int32> ForestMutationVersions;
+    TMap<FGuid, FText> LivingNpcMemoryRegistry;
+    TArray<FGameplayTag> UnchosenPossibilityTags;
     TMap<EEdrathRegion, float> RegionalInstabilityMap;
     TMap<FName, FCompanionRelationshipState> CompanionStates;
 };
