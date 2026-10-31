@@ -5,6 +5,16 @@
 #include "EdrathTypes.generated.h"
 
 UENUM(BlueprintType)
+enum class ECombatActionState : uint8
+{
+    Idle,
+    Attacking,
+    Dodging,
+    Parrying,
+    Staggered
+};
+
+UENUM(BlueprintType)
 enum class EEdrathCameraMode : uint8
 {
     ExteriorBirdsEye,
@@ -38,6 +48,15 @@ enum class EEdrathEndingType : uint8
     UnwrittenWorld,
     MortalWorld,
     UncomfortableTruth
+};
+
+UENUM(BlueprintType)
+enum class EEdrathQualityPreset : uint8
+{
+    Low_Mobile,
+    Medium,
+    High,
+    Epic_PC
 };
 
 UENUM(BlueprintType)

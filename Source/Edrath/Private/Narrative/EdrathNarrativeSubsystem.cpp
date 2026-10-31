@@ -130,6 +130,31 @@ void UEdrathNarrativeSubsystem::AdvanceExteriorTimeDays(int32 SimulatedDays)
     TotalExteriorDaysElapsed += FMath::Max(0, SimulatedDays);
 }
 
+TArray<FEdrathEvidenceRecord> UEdrathNarrativeSubsystem::GetAllEvidenceRecords() const
+{
+    TArray<FEdrathEvidenceRecord> OutRecords;
+    EvidenceRegistry.GenerateValueArray(OutRecords);
+    return OutRecords;
+}
+
+void UEdrathNarrativeSubsystem::RestoreEvidenceRecords(const TArray<FEdrathEvidenceRecord>& InRecords)
+{
+    EvidenceRegistry.Empty();
+    for (const FEdrathEvidenceRecord& Record : InRecords)
+    {
+        if (Record.EvidenceTag.IsValid())
+        {
+            EvidenceRegistry.Add(Record.EvidenceTag, Record);
+        }
+    }
+}
+
+void UEdrathNarrativeSubsystem::RestoreSettlementLoopState(int32 Day, bool bBroken)
+{
+    CurrentSettlementDay = FMath::Clamp(Day, 1, 7);
+    bAct1LoopBroken = bBroken;
+}
+
 bool UEdrathNarrativeSubsystem::HasUnlockedFourthPath() const
 {
     int32 ClueCount = 0;

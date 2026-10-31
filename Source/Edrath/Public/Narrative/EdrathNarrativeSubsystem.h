@@ -78,6 +78,27 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|Narrative|Act5")
     int32 GetTotalSimulatedExteriorDays() const { return TotalExteriorDaysElapsed; }
 
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|State")
+    const TMap<EEdrathRegion, float>& GetRegionalInstabilityMap() const { return RegionalInstabilityMap; }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void SetRegionalInstabilityMap(const TMap<EEdrathRegion, float>& InMap) { RegionalInstabilityMap = InMap; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|State")
+    TArray<FEdrathEvidenceRecord> GetAllEvidenceRecords() const;
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void RestoreEvidenceRecords(const TArray<FEdrathEvidenceRecord>& InRecords);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|State")
+    const TMap<FName, FCompanionRelationshipState>& GetCompanionStates() const { return CompanionStates; }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void SetCompanionStates(const TMap<FName, FCompanionRelationshipState>& InStates) { CompanionStates = InStates; }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void RestoreSettlementLoopState(int32 Day, bool bBroken);
+
     UFUNCTION(BlueprintPure, Category="Edrath|Narrative|Endings")
     bool HasUnlockedFourthPath() const;
 

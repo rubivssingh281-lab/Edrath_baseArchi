@@ -18,6 +18,9 @@
 #include "World/UnwrittenIslandSpawner.h"
 #include "Narrative/EdrathQuestSubsystem.h"
 #include "World/HouseWithOneMoreRoomActor.h"
+#include "Core/EdrathScalabilitySubsystem.h"
+#include "Core/EdrathSaveSubsystem.h"
+#include "BlackClock/EchoCombatComponent.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -381,6 +384,36 @@ bool FEdrathQuestAndCompanionSystemsTest::RunTest(const FString&)
         Maevra->RecruitMaevraToParty());
     TestFalse(TEXT("Maevra must no longer be hostile after recruitment"), Maevra->IsHostilePursuer());
     TestTrue(TEXT("Maevra must become a party member"), Maevra->IsPartyMember());
+
+    // --- Scalability & Mobile Optimization Verification ---
+    UEdrathScalabilitySubsystem* Scalability = GameInstance->GetSubsystem<UEdrathScalabilitySubsystem>();
+    TestNotNull(TEXT("Scalability subsystem must exist"), Scalability);
+    if (Scalability)
+    {
+        Scalability->ApplyQualityPreset(EEdrathQualityPreset::Epic_PC);
+        TestEqual(TEXT("Scalability must be Epic_PC"), Scalability->GetCurrentQualityPreset(), EEdrathQualityPreset::Epic_PC);
+        Scalability->ApplyQualityPreset(EEdrathQualityPreset::Low_Mobile);
+        TestEqual(TEXT("Scalability must be Low_Mobile"), Scalability->GetCurrentQualityPreset(), EEdrathQualityPreset::Low_Mobile);
+    }
+
+    // --- Kael Attributes & Combat Verification ---
+    Kael->ApplyDamage(25.0f);
+    TestEqual(TEXT("Kael health must decrease by 25"), Kael->CurrentHealth, 75.0f);
+    Kael->RestoreHealth(10.0f);
+    TestEqual(TEXT("Kael health must restore by 10"), Kael->CurrentHealth, 85.0f);
+    TestTrue(TEXT("Kael dodge execution must succeed"), Kael->PerformDodge());
+    TestTrue(TEXT("Kael parry execution must succeed"), Kael->PerformParry());
+
+    // --- Save & Persistence Verification ---
+    UEdrathSaveSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UEdrathSaveSubsystem>();
+    TestNotNull(TEXT("Save subsystem must exist"), SaveSubsystem);
+    if (SaveSubsystem)
+    {
+        TestTrue(TEXT("Save to slot must succeed"), SaveSubsystem->SaveGameToSlot(TEXT("PreAlpha_TestSlot"), 0));
+        TestTrue(TEXT("Save slot must exist on disk"), SaveSubsystem->DoesSaveSlotExist(TEXT("PreAlpha_TestSlot"), 0));
+        TestTrue(TEXT("Load from slot must succeed"), SaveSubsystem->LoadGameFromSlot(TEXT("PreAlpha_TestSlot"), 0));
+        SaveSubsystem->DeleteSaveSlot(TEXT("PreAlpha_TestSlot"), 0);
+    }
 
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
