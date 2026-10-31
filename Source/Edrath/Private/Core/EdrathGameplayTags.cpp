@@ -21,5 +21,24 @@ namespace EdrathGameplayTags
     UE_DEFINE_GAMEPLAY_TAG(Twist5, "Story.Twist5");
     UE_DEFINE_GAMEPLAY_TAG(Twist6, "Story.Twist6");
     UE_DEFINE_GAMEPLAY_TAG(QuestAct1Crypt, "Quest.Act1.CryptTwist");
+    UE_DEFINE_GAMEPLAY_TAG(FactionNhalRestorationists, "Faction.Nhal.Restorationists");
+    UE_DEFINE_GAMEPLAY_TAG(FactionNhalRevanchists, "Faction.Nhal.Revanchists");
+    UE_DEFINE_GAMEPLAY_TAG(QuestWeddingNotHappened, "Quest.WeddingNotHappened");
+    UE_DEFINE_GAMEPLAY_TAG(QuestBuriedFuture, "Quest.BuriedFuture");
+    UE_DEFINE_GAMEPLAY_TAG(QuestVillageVotesOnDead, "Quest.VillageVotesOnDead");
+    UE_DEFINE_GAMEPLAY_TAG(QuestDragonNoFire, "Quest.DragonNoFire");
+    UE_DEFINE_GAMEPLAY_TAG(QuestLastHonestKing, "Quest.LastHonestKing");
     UE_DEFINE_GAMEPLAY_TAG(QuestHouseOneMoreRoom, "Quest.HouseOneMoreRoom");
+    UE_DEFINE_GAMEPLAY_TAG(QuestWeddingMergeTimelines, "Quest.WeddingNotHappened.MergeTimelines");
+    UE_DEFINE_GAMEPLAY_TAG(QuestWeddingSeverMemoryEcho, "Quest.WeddingNotHappened.SeverMemoryEcho");
+    UE_DEFINE_GAMEPLAY_TAG(QuestBuriedFutureLovingFather, "Quest.BuriedFuture.LovingFather");
+    UE_DEFINE_GAMEPLAY_TAG(QuestBuriedFutureViolentStranger, "Quest.BuriedFuture.ViolentStranger");
+    UE_DEFINE_GAMEPLAY_TAG(QuestDragonReturnMemories, "Quest.DragonNoFire.ReturnMemories");
+    UE_DEFINE_GAMEPLAY_TAG(QuestDragonPreservePeace, "Quest.DragonNoFire.PreservePeace");
+    UE_DEFINE_GAMEPLAY_TAG(QuestLastKingExposeTruth, "Quest.LastHonestKing.ExposeTruth");
+    UE_DEFINE_GAMEPLAY_TAG(QuestLastKingPreservePeace, "Quest.LastHonestKing.PreservePeace");
+    UE_DEFINE_GAMEPLAY_TAG(QuestVillageResurrectDead, "Quest.VillageVotesOnDead.ResurrectDead");
+    UE_DEFINE_GAMEPLAY_TAG(QuestVillageExposeMayor, "Quest.VillageVotesOnDead.ExposeMayor");
+    UE_DEFINE_GAMEPLAY_TAG(QuestVillagePreserveMayor, "Quest.VillageVotesOnDead.PreserveMayor");
+    UE_DEFINE_GAMEPLAY_TAG(QuestHouseRememberOwner, "Quest.HouseOneMoreRoom.RememberOwner");
 }

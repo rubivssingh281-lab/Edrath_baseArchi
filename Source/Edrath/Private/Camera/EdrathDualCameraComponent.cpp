@@ -1,5 +1,7 @@
 #include "Camera/EdrathDualCameraComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Core/EdrathHardwareOptimizationSubsystem.h"
+#include "Engine/GameInstance.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -36,6 +38,14 @@ void UEdrathDualCameraComponent::SetCameraPerspective(EEdrathCameraMode NewMode,
     }
 
     CurrentMode = NewMode;
+    if (OwnerCharacter && OwnerCharacter->GetWorld() && OwnerCharacter->GetWorld()->GetGameInstance())
+    {
+        if (UEdrathHardwareOptimizationSubsystem* HardwareOptimization =
+            OwnerCharacter->GetWorld()->GetGameInstance()->GetSubsystem<UEdrathHardwareOptimizationSubsystem>())
+        {
+            HardwareOptimization->ApplyCameraModeOptimization(NewMode);
+        }
+    }
     if (OwnerCharacter && SpringArmComp)
     {
         UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();

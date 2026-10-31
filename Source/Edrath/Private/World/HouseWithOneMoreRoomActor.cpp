@@ -21,3 +21,13 @@ AActor* AHouseWithOneMoreRoomActor::OnOwnerRememberedSpawnNextRoom()
     }
     return Room;
 }
+
+bool AHouseWithOneMoreRoomActor::UnlockFinalAtrocityRoom()
+{
+    if (bFinalAtrocityRoomUnlocked)
+    {
+        return false;
+    }
+    bFinalAtrocityRoomUnlocked = true;
+    return true;
+}

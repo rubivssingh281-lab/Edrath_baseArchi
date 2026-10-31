@@ -24,7 +24,14 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|SideQuests")
     int32 GetSpawnedRoomCount() const { return SpawnedRooms.Num(); }
 
+    UFUNCTION(BlueprintCallable, Category="Edrath|SideQuests")
+    bool UnlockFinalAtrocityRoom();
+
+    UFUNCTION(BlueprintPure, Category="Edrath|SideQuests")
+    bool IsFinalAtrocityRoomUnlocked() const { return bFinalAtrocityRoomUnlocked; }
+
 private:
     UPROPERTY()
     TArray<TObjectPtr<AActor>> SpawnedRooms;
+    bool bFinalAtrocityRoomUnlocked = false;
 };

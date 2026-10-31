@@ -6,6 +6,8 @@ public class Edrath : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         CppStandard = CppStandardVersion.Cpp20;
+        bUseUnity = true;
+        MinFilesUsingPrecompiledHeaderOverride = 1;
         PublicDependencyModuleNames.AddRange(new string[]
         {
             "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
