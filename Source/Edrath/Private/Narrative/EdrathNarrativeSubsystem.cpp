@@ -1,0 +1,98 @@
+#include "Narrative/EdrathNarrativeSubsystem.h"
+
+void UEdrathNarrativeSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+    Super::Initialize(Collection);
+    const TArray<FName> CoreCompanions{TEXT("Ilyra"), TEXT("Orren"), TEXT("Senn"), TEXT("Maevra")};
+    for (const FName& Name : CoreCompanions)
+    {
+        FCompanionRelationshipState State;
+        State.CompanionID = Name;
+        State.Loyalty = Name == TEXT("Maevra") ? 25.0f : 55.0f;
+        CompanionStates.Add(Name, State);
+    }
+}
+
+void UEdrathNarrativeSubsystem::AdvanceSettlementDay()
+{
+    ++CurrentSettlementDay;
+    if (!bAct1LoopBroken && CurrentSettlementDay > 7)
+    {
+        CurrentSettlementDay = 1;
+        ++SettlementLoopResetCount;
+        OnSettlementLoopReset.Broadcast(SettlementLoopResetCount);
+    }
+}
+
+void UEdrathNarrativeSubsystem::BreakAct1SettlementLoop()
+{
+    bAct1LoopBroken = true;
+}
+
+void UEdrathNarrativeSubsystem::SetCitizenBeliefWeight(FGameplayTag BuildingTag, float NewWeight)
+{
+    const float ClampedWeight = FMath::Clamp(NewWeight, 0.0f, 1.0f);
+    BuildingBeliefWeights.Add(BuildingTag, ClampedWeight);
+    OnBeliefWeightChanged.Broadcast(BuildingTag, ClampedWeight);
+}
+
+float UEdrathNarrativeSubsystem::GetCitizenBeliefWeight(FGameplayTag BuildingTag) const
+{
+    if (const float* Weight = BuildingBeliefWeights.Find(BuildingTag))
+    {
+        return *Weight;
+    }
+    return 1.0f;
+}
+
+void UEdrathNarrativeSubsystem::RecordRecoveredMemory(FGameplayTag MemoryTag, FName TrueOwnerNPC)
+{
+    MemoryTrueOwnerRegistry.Add(MemoryTag, TrueOwnerNPC);
+}
+
+void UEdrathNarrativeSubsystem::AddOrMutateEvidence(FGameplayTag EvidenceTag, FText NewDescription, bool bIsTwistClue)
+{
+    FEdrathEvidenceRecord& Record = EvidenceRegistry.FindOrAdd(EvidenceTag);
+    if (Record.EvidenceTag.IsValid())
+    {
+        ++Record.MutationVersion;
+    }
+    else
+    {
+        Record.EvidenceTag = EvidenceTag;
+        Record.MutationVersion = 1;
+    }
+    Record.CurrentDescription = MoveTemp(NewDescription);
+    Record.bIsForeshadowingTwistClue = bIsTwistClue;
+}
+
+void UEdrathNarrativeSubsystem::RegisterBlackClockActivation(EEdrathRegion Region, float InstabilityDelta)
+{
+    ++ClockUsagePrunedFuturesCount;
+    float& Instability = RegionalInstabilityMap.FindOrAdd(Region);
+    Instability = FMath::Clamp(Instability + InstabilityDelta, 0.0f, 100.0f);
+}
+
+void UEdrathNarrativeSubsystem::AdvanceExteriorTimeDays(int32 SimulatedDays)
+{
+    TotalExteriorDaysElapsed += FMath::Max(0, SimulatedDays);
+}
+
+bool UEdrathNarrativeSubsystem::HasUnlockedFourthPath() const
+{
+    int32 ClueCount = 0;
+    for (const TPair<FGameplayTag, FEdrathEvidenceRecord>& Pair : EvidenceRegistry)
+    {
+        ClueCount += Pair.Value.bIsForeshadowingTwistClue ? 1 : 0;
+    }
+    return ClueCount >= 6;
+}
+
+EEdrathEndingType UEdrathNarrativeSubsystem::EvaluateFinalEnding(EEdrathEndingType PlayerSelectedPhilosophy) const
+{
+    if (PlayerSelectedPhilosophy == EEdrathEndingType::UncomfortableTruth && !HasUnlockedFourthPath())
+    {
+        return EEdrathEndingType::MortalWorld;
+    }
+    return PlayerSelectedPhilosophy;
+}
