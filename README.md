@@ -229,14 +229,29 @@ Edrath/
 │           │   └── MemoryReconstructionAnchor.cpp
 │           └── Tests/
 │               └── EdrathPreAlphaAutomationTest.cpp
+├── Shaders/
+│   ├── PossibilityDissolve.usf                                # Temporal timeline dissolve & burning edge HLSL shader
+│   ├── MemoryEchoGhost.usf                                    # Echo combat holographic Fresnel & chromatic aberration HLSL shader
+│   └── PackedRGBACustomizer.usf                               # Multi-channel packed tint & wear composite HLSL shader
+├── Documentation/
+│   └── 3D_Modeling_and_Art_Pipeline_Guide.md                  # Nanite budgets, skeletal sockets, ORM packing & Blender/Maya pipeline
+├── Scripts/
+│   ├── SetupLaptopEnvironment.ps1                             # 1-Click Windows PowerShell laptop setup & project generator
+│   ├── SetupLaptopEnvironment.bat                             # 1-Click Windows batch launcher
+│   ├── SetupLaptopEnvironment.sh                              # Cross-platform Linux / macOS setup script
+│   └── create_git_commits.sh                                  # 6-commit sequential git packaging script
 ├── Content/
 │   ├── Characters/
 │   │   ├── Kael_MasterRig/
-│   │   └── ModularOutfits/
-│   ├── Shaders/
-│   │   ├── M_PossibilityDissolve.uasset
-│   │   ├── M_MemoryEchoGhost.uasset
-│   │   └── M_Customizer_PackedRGBA.uasset
+│   │   ├── Companions/
+│   │   └── Enemies/
+│   ├── Environment/
+│   │   ├── Architecture/Modular/
+│   │   ├── Foliage/
+│   │   └── Materials/
+│   ├── Input/
+│   │   └── Actions/
+│   ├── UI/
 │   └── Maps/
 │       └── PreAlpha_Act1/
 │           ├── L_PreAlpha_Act1_BattlefieldAndCrypt.umap
@@ -1676,3 +1691,80 @@ To ensure GitHub Copilot builds the base architecture first and then constructs 
    > `@workspace Read README.md Sections 3, 6.7, 6.8, and 6.9. Generate EdrathNarrativeSubsystem (.h/.cpp), KaelCharacter (.h/.cpp), BeliefBuildingActor (.h/.cpp), and HouseWithOneMoreRoomActor (.h/.cpp). Compile the Edrath C++ module and resolve any compiler warnings.`
 5. **Prompt 5 (Pre-Alpha Playable Vertical Slice & Automated Verification)**:
    > `@workspace Read README.md Section 7. Generate Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp, compile, and run the Edrath.PreAlpha.CoreSystemsAndDualCameraVerification automation test, then scaffold the Pre-Alpha Act I level blueprint and actors for Zones 1 through 5.`
+
+
+## 9. Laptop Quickstart, Hardware Optimization & In-Editor 3D Modeling
+
+To ensure the project runs smoothly on portable laptops (e.g., RTX 3050/3060/4060 Laptop GPUs, Apple Silicon with Parallels/CrossOver, or AMD APUs) without thermal throttling or frame drops, the engine is pre-configured with dynamic resolution scaling, thermal-safe shader compilation, and built-in viewport 3D modeling tools.
+
+### 9.1 1-Click Laptop Environment Setup
+
+* **Windows (PowerShell / Batch)**:
+  ```powershell
+  # Right-click and run with PowerShell or execute from terminal:
+  .\Scripts\SetupLaptopEnvironment.ps1 -Preset Balanced
+  ```
+  Or simply double-click `Scripts\SetupLaptopEnvironment.bat`.
+* **Linux / macOS**:
+  ```bash
+  chmod +x Scripts/SetupLaptopEnvironment.sh
+  ./Scripts/SetupLaptopEnvironment.sh
+  ```
+
+The setup script automatically locates Unreal Engine 5.5, validates Git LFS tracking, generates Visual Studio 2022 / JetBrains Rider project solution files, and binds the laptop scalability profiles.
+
+### 9.2 Laptop GPU Scalability Presets
+
+Three dedicated laptop device profiles are pre-configured in `Config/DefaultDeviceProfiles.ini`:
+
+| Device Profile | Max FPS | Lumen GI & Reflections | Shadow Type | Nanite | Target Hardware |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`Windows_Laptop_Battery`** | 60 FPS | Software Lumen (Fast) | Standard Shadow Maps | Active | Unplugged laptop / integrated GPUs |
+| **`Windows_Laptop_Balanced`** | 90 FPS | Software Lumen + Screen Traces | Virtual Shadow Maps | Active | RTX 3050 / 3060 / 4050 Mobile |
+| **`Windows_Laptop_Performance`** | 120 FPS | Software Lumen (High Quality) | High-Res VSM | Active | RTX 3070 / 4070 / 4080 Mobile |
+
+Switch profiles in the Unreal Editor console (`~` key) via:
+```text
+Windows_Laptop_Balanced
+```
+
+### 9.3 In-Editor 3D Modeling & Sculpting Workflow
+
+The project enables `ModelingToolsEditorMode`, `GeometryScripting`, and `ControlRig` inside [Edrath.uproject](Edrath.uproject). You can prototype, model, sculpt, and texture assets directly inside the Unreal Engine 5.5 viewport:
+
+1. **Activate Modeling Mode**: Press `Shift + 5` in the Unreal Editor viewport.
+2. **Modular Architecture Grayboxing**: Use `Shape -> Box / Stairs` and `PolyModel -> PolyExtrude` to create modular walls, crypt arches, and door sockets following the 400cm grid.
+3. **Sculpting Wear & Ruins**: Select static meshes and use `Deform -> Sculpt` with smooth, flatten, and pinch brushes to add weathering to crypts and sarcophagi.
+4. **Boolean Reality States**: Generate shattered vs. intact geometry using `Model -> Mesh Boolean` for `APossibilityShiftActor` pairs.
+5. **Detailed Guidelines**: Refer to [Documentation/3D_Modeling_and_Art_Pipeline_Guide.md](Documentation/3D_Modeling_and_Art_Pipeline_Guide.md) for full polycount budgets, skeletal sockets, ORM texture packing standards, and Blender/Maya export presets.
+
+### 9.4 Virtual Shaders Directory Mount
+
+Custom HLSL reality shaders are stored in `Shaders/` and mounted to `/Project/Shaders` during module initialization in `Source/Edrath/EdrathModule.cpp`:
+* `/Project/Shaders/PossibilityDissolve.usf`
+* `/Project/Shaders/MemoryEchoGhost.usf`
+* `/Project/Shaders/PackedRGBACustomizer.usf`
+
+Recompile shaders at any time while the editor is running using `Ctrl + Shift + Period`.
+
+---
+
+## 10. Development Milestone & Git Commit Log
+
+The foundational laptop engine setup, custom shader pipeline, content architecture, and art documentation are packaged into 6 discrete, sequential commits:
+
+| Commit # | Conventional Commit Title | Key Files & Subsystems Added |
+| :---: | :--- | :--- |
+| **1** | `feat(engine): enable UE5.5 Modeling Tools & configure laptop hardware optimization profiles` | `Edrath.uproject`, `Config/DefaultEngine.ini`, `Config/DefaultDeviceProfiles.ini` |
+| **2** | `feat(shaders): implement HLSL custom reality shaders and virtual directory mount` | `Shaders/*.usf`, `Source/Edrath/EdrathModule.h/.cpp`, `Source/Edrath/Edrath.Build.cs` |
+| **3** | `feat(content): scaffold Content asset architecture, collision channels, and Enhanced Input profiles` | `Content/` asset tree, `Config/DefaultInput.ini`, `Config/DefaultEngine.ini` collision profiles |
+| **4** | `docs(art): add comprehensive 3D Modeling, Nanite budgets, skeletal sockets, and texturing guide` | `Documentation/3D_Modeling_and_Art_Pipeline_Guide.md` |
+| **5** | `feat(devops): add automated laptop setup & one-click build scripts for Windows, Mac, and Linux` | `Scripts/SetupLaptopEnvironment.*`, `Scripts/create_git_commits.sh` |
+| **6** | `docs(readme): update Master Technical Architecture with Laptop Readiness, Modeling Tools guide, and 6-commit milestone log` | `README.md` |
+
+To apply and commit all 6 stages sequentially on your device, execute:
+```bash
+chmod +x Scripts/create_git_commits.sh
+bash Scripts/create_git_commits.sh
+git push origin main
+```
