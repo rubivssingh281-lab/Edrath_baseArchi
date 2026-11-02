@@ -3,6 +3,9 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class FEdrathModule final : public FDefaultGameModuleImpl
+class FEdrathModule final : public IModuleInterface
 {
+public:
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 };

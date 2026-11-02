@@ -1,0 +1,56 @@
+// Edrath: The World That Forgot Tomorrow
+// Shader: MemoryEchoGhost.usf
+// Purpose: Holographic, chromatic aberration Fresnel ghost shader for Echo Combat clones and Memory Anchors.
+// Path: /Project/Shaders/MemoryEchoGhost.usf
+
+#pragma once
+
+/**
+ * Calculates temporal holographic echo visuals for combat echoes and past memories.
+ *
+ * @param NormalWS         World-space surface normal
+ * @param CameraVectorWS   Normalized vector from pixel to camera
+ * @param WorldPos         World position of surface
+ * @param GameTime         Current continuous game time in seconds
+ * @param EchoColor        Primary tint color for the echo entity (e.g. ethereal cyan or gold)
+ * @param Instability      Regional instability factor [0.0 - 1.0] driving glitch frequency
+ * @param OutBaseColor     Output diffused albedo
+ * @param OutEmissive      Output glowing hologram Fresnel
+ * @param OutOpacity       Output translucent blend factor
+ */
+void CalculateMemoryEchoGhost(
+    float3 NormalWS,
+    float3 CameraVectorWS,
+    float3 WorldPos,
+    float GameTime,
+    float3 EchoColor,
+    float Instability,
+    out float3 OutBaseColor,
+    out float3 OutEmissive,
+    out float OutOpacity
+)
+{
+    // Fresnel rim factor
+    float NdotV = saturate(dot(normalize(NormalWS), normalize(CameraVectorWS)));
+    float Fresnel = pow(1.0 - NdotV, 3.2);
+
+    // Scanlines along World Z
+    float Scanline = sin(WorldPos.z * 18.0 - GameTime * 8.0) * 0.5 + 0.5;
+    Scanline = pow(Scanline, 4.0) * 0.4;
+
+    // Temporal flicker / glitch jitter based on instability
+    float GlitchNoise = frac(sin(dot(floor(WorldPos.xy * 0.1), float2(12.9898, 78.233)) + GameTime * 14.0) * 43758.5453);
+    float GlitchBand = step(0.96 - (Instability * 0.12), GlitchNoise);
+
+    // Chromatic aberration color offsets
+    float3 ColorShift = float3(
+        EchoColor.r * (1.0 + GlitchBand * 0.8),
+        EchoColor.g * (1.0 - GlitchBand * 0.4),
+        EchoColor.b * (1.0 + GlitchBand * 1.2)
+    );
+
+    // Final outputs
+    OutBaseColor = ColorShift * 0.2;
+    OutEmissive = ColorShift * (Fresnel * 4.5 + Scanline * 2.0 + GlitchBand * 6.0);
+    OutOpacity = saturate(Fresnel * 0.85 + Scanline * 0.35 + GlitchBand * 0.4);
+}

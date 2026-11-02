@@ -1,0 +1,57 @@
+// Edrath: The World That Forgot Tomorrow
+// Shader: PossibilityDissolve.usf
+// Purpose: Temporal reality-shift dissolve for APossibilityShiftActor and ABeliefBuildingActor.
+// Path: /Project/Shaders/PossibilityDissolve.usf
+
+#pragma once
+
+/**
+ * Calculates dynamic temporal dissolve factor and emissive burn edge
+ * for actors swapping between PresentTimeline and RejectedTimeline.
+ *
+ * @param WorldPosition   World-space pixel coordinate
+ * @param DissolveAlpha   Timeline transition progress [0.0 = Present, 1.0 = Rejected]
+ * @param NoiseScale      Spatial frequency of noise pattern (default ~0.02)
+ * @param EdgeWidth       Width of the burning emissive border (default ~0.08)
+ * @param EdgeColor       Emissive color vector of the temporal rift edge
+ * @param OutClipMask     Output clip value (if < 0, pixel is discarded)
+ * @param OutEmissive     Output emissive color contribution
+ */
+void CalculatePossibilityDissolve(
+    float3 WorldPosition,
+    float DissolveAlpha,
+    float NoiseScale,
+    float EdgeWidth,
+    float3 EdgeColor,
+    out float OutClipMask,
+    out float3 OutEmissive
+)
+{
+    // Generate multi-octave pseudo-noise based on world position
+    float3 P = WorldPosition * NoiseScale;
+    float N1 = sin(P.x * 2.1 + P.y * 1.7 + P.z * 1.3);
+    float N2 = cos(P.x * 3.7 - P.y * 2.3 + P.z * 4.1);
+    float N3 = sin(P.x * 5.9 + P.y * 6.1 - P.z * 5.3);
+    float NoiseVal = (N1 + N2 * 0.5 + N3 * 0.25) / 1.75;
+    NoiseVal = NoiseVal * 0.5 + 0.5; // Remap [-1, 1] -> [0, 1]
+
+    // Calculate clip threshold
+    float Threshold = saturate(DissolveAlpha);
+    float Diff = NoiseVal - Threshold;
+
+    // Discard threshold
+    OutClipMask = Diff;
+
+    // Edge emissive glow when Diff is between 0 and EdgeWidth
+    if (Diff >= 0.0 && Diff <= EdgeWidth && Threshold > 0.001 && Threshold < 0.999)
+    {
+        float EdgeIntensity = 1.0 - (Diff / EdgeWidth);
+        // Exponential ramp for intense burning edge
+        float BurnRamp = pow(EdgeIntensity, 2.5) * 8.0;
+        OutEmissive = EdgeColor * BurnRamp;
+    }
+    else
+    {
+        OutEmissive = float3(0.0, 0.0, 0.0);
+    }
+}

@@ -15,7 +15,7 @@ public class Edrath : ModuleRules
         });
         PrivateDependencyModuleNames.AddRange(new string[]
         {
-            "Slate", "SlateCore", "RenderCore", "RHI"
+            "Slate", "SlateCore", "RenderCore", "RHI", "Projects"
         });
     }
 }

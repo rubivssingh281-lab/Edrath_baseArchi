@@ -1,0 +1,66 @@
+// Edrath: The World That Forgot Tomorrow
+// Shader: PackedRGBACustomizer.usf
+// Purpose: Multi-channel packed tinting & weathering compositor for KaelModularRigComponent outfits.
+// Path: /Project/Shaders/PackedRGBACustomizer.usf
+
+#pragma once
+
+/**
+ * Composite customizable colors and material properties using packed RGBA mask channels:
+ * - Red Channel:   Primary Cloth / Robes
+ * - Green Channel: Secondary Leather / Armor Plate
+ * - Blue Channel:  Black Clock Inlay Metal (Gold, Obsidian, Silver)
+ * - Alpha Channel: Dirt, Blood, and Battle Wear Mask
+ */
+void CompositePackedCustomizer(
+    float4 MaskRGBA,
+    float3 RawBaseColor,
+    float RawRoughness,
+    float RawMetallic,
+    float3 PrimaryClothTint,
+    float3 SecondaryLeatherTint,
+    float3 InlayMetalTint,
+    float3 DirtBloodColor,
+    float WearIntensity,
+    out float3 OutBaseColor,
+    out float OutRoughness,
+    out float OutMetallic
+)
+{
+    // Extract masks
+    float MaskCloth   = MaskRGBA.r;
+    float MaskLeather = MaskRGBA.g;
+    float MaskInlay   = MaskRGBA.b;
+    float MaskWear    = saturate(MaskRGBA.a * WearIntensity);
+
+    // Tint individual zones
+    float3 TintedCloth   = RawBaseColor * PrimaryClothTint;
+    float3 TintedLeather = RawBaseColor * SecondaryLeatherTint;
+    float3 TintedInlay   = InlayMetalTint;
+
+    // Blend base colors
+    float3 BlendedColor = RawBaseColor;
+    BlendedColor = lerp(BlendedColor, TintedCloth, MaskCloth);
+    BlendedColor = lerp(BlendedColor, TintedLeather, MaskLeather);
+    BlendedColor = lerp(BlendedColor, TintedInlay, MaskInlay);
+
+    // Apply weathering overlay (dirt/blood/wear)
+    BlendedColor = lerp(BlendedColor, DirtBloodColor, MaskWear * 0.85);
+
+    // Blend material properties
+    float FinalRoughness = RawRoughness;
+    FinalRoughness = lerp(FinalRoughness, 0.75, MaskCloth);
+    FinalRoughness = lerp(FinalRoughness, 0.45, MaskLeather);
+    FinalRoughness = lerp(FinalRoughness, 0.15, MaskInlay);
+    FinalRoughness = lerp(FinalRoughness, 0.95, MaskWear); // Dirt is rough
+
+    float FinalMetallic = RawMetallic;
+    FinalMetallic = lerp(FinalMetallic, 0.0, MaskCloth);
+    FinalMetallic = lerp(FinalMetallic, 0.1, MaskLeather);
+    FinalMetallic = lerp(FinalMetallic, 1.0, MaskInlay);   // Inlay is metallic
+    FinalMetallic = lerp(FinalMetallic, 0.0, MaskWear);   // Dirt is non-metallic
+
+    OutBaseColor = BlendedColor;
+    OutRoughness = saturate(FinalRoughness);
+    OutMetallic = saturate(FinalMetallic);
+}
