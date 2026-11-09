@@ -6,6 +6,34 @@ This document is structured as a strict, deterministic specification for **GitHu
 1. **Stage 1 — Core Architectural Base (`Source/EdrathCore`)**: Build all foundational C++ subsystems, dual-perspective camera controllers, skeletal rigging sockets, Black Clock reality-shifting managers, and narrative state machines first with zero broken dependencies.
 2. **Stage 2 — Working Pre-Alpha Playable Vertical Slice (`Content/Maps/PreAlpha_Act1`)**: Assemble and test a complete, playable Pre-Alpha build covering Act I (*The Man Who Was Never Born*), including the corpse-strewn battlefield, the 7-day looping settlement, exterior-to-interior camera transitions, Echo Combat, Possibility Shifting, and the 114-year-dead priest memory investigation.
 
+---
+
+## ⚡ 1-Click Clone & Environment Setup
+
+When cloning this repository onto any new device (Linux, macOS, WSL, Windows):
+
+```bash
+# Clone the repository
+git clone https://github.com/rubivssingh281-lab/Edrath_baseArchi.git
+cd Edrath_baseArchi
+
+# Run the 1-click universal setup script (installs C++20, .NET 8, Java 17 for Mobile, Vulkan, and pulls LFS assets)
+chmod +x setup.sh && ./setup.sh
+```
+
+For native Windows PowerShell:
+```powershell
+.\Scripts\SetupLaptopEnvironment.ps1
+```
+
+To clean transient build packages and reclaim 20-50GB on 512GB laptop drives:
+```bash
+./Scripts/CleanBuildArtifacts.sh
+# On Windows: .\Scripts\CleanBuildArtifacts.ps1
+```
+
+---
+
 ## 1. Engine Selection & Visual Fidelity Justification: Unreal Engine 5 (C++20 + Blueprints)
 
 To render clean, smooth character figures, seamless skeletal morphs, atmospheric dark-fantasy lighting, and zero-loading-screen reality shifts across an 80-hour open world, this project standardizes on **[Unreal Engine 5](https://www.unrealengine.com/unreal-engine-5) (UE 5.5+ / 5.8 C++20 & Blueprint Hybrid Architecture)**.
@@ -1747,6 +1775,18 @@ Custom HLSL reality shaders are stored in `Shaders/` and mounted to `/Project/Sh
 
 Recompile shaders at any time while the editor is running using `Ctrl + Shift + Period`.
 
+### 9.5 High-End Laptop Target: RTX 5070 8GB & Ryzen 7 Architecture
+
+For development on modern high-end laptops equipped with **NVIDIA GeForce RTX 5070 (8GB VRAM)**, **AMD Ryzen 7 253 (8C/16T)**, **16GB DDR5 RAM**, and a **512GB Gen4 NVMe M.2 SSD**, the engine uses a custom **`Development_Laptop`** quality preset that pushes the hardware to its absolute limit without incurring VRAM page thrashing:
+
+* **Software Lumen at 2x Probe Density**: Replaces hardware ray tracing, saving ~2GB VRAM while doubling probe sampling (`DownsampleFactor=8`) and running full-resolution Lumen reflections (`DownsampleFactor=1`).
+* **Maximized Nanite & VSM**: 1024MB Nanite streaming pool (`MaxPixelsPerEdge=1.0`) and 2048 Virtual Shadow Map physical pages with 0.0 local LOD bias for razor-sharp contact shadows.
+* **VRAM Budget Manager**: `UEdrathHardwareOptimizationSubsystem` enforces a 7680MB ceiling (8192MB - 512MB driver reserve) with context-aware camera mode and possibility timeline adjustments.
+* **Thermal & RAM Protection**: Shader compiler throttled to 6 worker processes and 1536MB RAM to keep the 16GB system responsive during background compilation.
+* **NVMe Lifespan & Storage Protection**: Derived Data Cache (DDC) strictly capped at 28GB with a 7-14 day purge cycle.
+
+Full technical breakdown and profiling cheatsheet: [Documentation/Laptop_Development_Optimization_Guide.md](Documentation/Laptop_Development_Optimization_Guide.md).
+
 ---
 
 ## 10. Development Milestone & Git Commit Log
@@ -1766,5 +1806,32 @@ To apply and commit all 6 stages sequentially on your device, execute:
 ```bash
 chmod +x Scripts/create_git_commits.sh
 bash Scripts/create_git_commits.sh
+git push origin main
+```
+
+---
+
+## 11. Laptop Hardware-Limit Optimization Milestone (4 Commits)
+
+The RTX 5070 8GB / Ryzen 7 253 / 16GB DDR5 optimization pass is packaged into 4 clean, atomic commits:
+
+| Commit # | Conventional Commit Scope | Key Modifications |
+| :---: | :--- | :--- |
+| **1** | `config: tune engine and scalability configs for RTX 5070 8GB laptop development` | `Config/DefaultEngine.ini`, `Config/DefaultScalability.ini`, `Config/DefaultEditor.ini`, `Config/DefaultEditorPerProjectUserSettings.ini` |
+| **2** | `feat(core): add Development_Laptop quality preset with VRAM-aware auto-detection` | `Source/Edrath/Public/Core/EdrathTypes.h`, `Source/Edrath/Public/Core/EdrathScalabilitySubsystem.h`, `Source/Edrath/Private/Core/EdrathScalabilitySubsystem.cpp`, `Source/Edrath/Private/Core/EdrathGameInstance.cpp`, `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp` |
+| **3** | `feat(perf): rewrite hardware optimization subsystem with VRAM budget management` | `Source/Edrath/Public/Core/EdrathHardwareOptimizationSubsystem.h`, `Source/Edrath/Private/Core/EdrathHardwareOptimizationSubsystem.cpp` |
+| **4** | `docs: add laptop development guide and optimization reference` | `Documentation/Laptop_Development_Optimization_Guide.md`, `Scripts/create_laptop_optimization_commits.sh`, `Scripts/create_laptop_optimization_commits.bat`, `README.md` |
+
+To stage and create these 4 commits automatically:
+```bash
+# On Linux / macOS / WSL:
+chmod +x Scripts/create_laptop_optimization_commits.sh
+./Scripts/create_laptop_optimization_commits.sh
+
+# On Windows:
+.\Scripts\create_laptop_optimization_commits.bat
+```
+Then push to your branch:
+```bash
 git push origin main
 ```
