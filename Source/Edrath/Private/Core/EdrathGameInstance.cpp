@@ -1,13 +1,28 @@
 #include "Core/EdrathGameInstance.h"
 #include "Core/EdrathScalabilitySubsystem.h"
+#include "Core/EdrathHardwareOptimizationSubsystem.h"
 
 void UEdrathGameInstance::Init()
 {
     Super::Init();
 
-    if (UEdrathScalabilitySubsystem* Scalability = GetSubsystem<UEdrathScalabilitySubsystem>())
+    // Both subsystems auto-detect hardware and apply optimizations during Initialize().
+    // Log the final state here for development visibility in the output log.
+    if (const UEdrathScalabilitySubsystem* Scalability = GetSubsystem<UEdrathScalabilitySubsystem>())
     {
-        Scalability->AutoDetectPlatformAndApplyDefaults();
+        UE_LOG(LogTemp, Log,
+               TEXT("Edrath GameInstance: Scalability preset=%d, VRAM=%d MB, RAM=%d MB"),
+               static_cast<int32>(Scalability->GetCurrentQualityPreset()),
+               Scalability->GetDetectedVRAMMB(),
+               Scalability->GetDetectedSystemRAMMB());
+    }
+
+    if (const UEdrathHardwareOptimizationSubsystem* HWOpt = GetSubsystem<UEdrathHardwareOptimizationSubsystem>())
+    {
+        const FEdrathHardwareProfile& Profile = HWOpt->GetHardwareProfile();
+        UE_LOG(LogTemp, Log,
+               TEXT("Edrath GameInstance: GPU=%s, VRAM Ceiling=%d MB, Cores=%d"),
+               *Profile.GPUAdapterName, HWOpt->GetVRAMCeilingMB(), Profile.LogicalCores);
     }
 }
 

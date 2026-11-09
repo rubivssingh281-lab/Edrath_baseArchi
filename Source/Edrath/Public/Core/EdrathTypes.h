@@ -56,6 +56,7 @@ enum class EEdrathQualityPreset : uint8
     Low_Mobile,
     Medium,
     High,
+    Development_Laptop,
     Epic_PC
 };
 

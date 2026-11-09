@@ -19,8 +19,13 @@
 #include "Narrative/EdrathQuestSubsystem.h"
 #include "World/HouseWithOneMoreRoomActor.h"
 #include "Core/EdrathScalabilitySubsystem.h"
+#include "Core/EdrathHardwareOptimizationSubsystem.h"
 #include "Core/EdrathSaveSubsystem.h"
 #include "BlackClock/EchoCombatComponent.h"
+#include "UI/BlackClockWidget.h"
+#include "UI/ForensicLedgerWidget.h"
+#include "UI/MemoryDialogueWidget.h"
+#include "UI/EdrathHUD.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -207,6 +212,114 @@ bool FEdrathAct1PreAlphaFiveZoneTest::RunTest(const FString&)
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathHUDAndForensicUIVerificationTest,
+    "Edrath.PreAlpha.HUDAndForensicUIVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    // 1. Verify Black Clock HUD Widget state updates
+    UBlackClockWidget* ClockWidget = NewObject<UBlackClockWidget>(TestWorld);
+    TestNotNull(TEXT("Black Clock HUD Widget must instantiate"), ClockWidget);
+    if (ClockWidget)
+    {
+        ClockWidget->UpdateClockStability(75.0f, 100.0f);
+        TestEqual(TEXT("Clock stability percent must match"), ClockWidget->GetDisplayedStabilityPercent(), 75.0f);
+
+        ClockWidget->UpdateTimelineState(ETimelineState::RejectedTimeline);
+        TestEqual(TEXT("Timeline state must reflect RejectedTimeline"),
+            ClockWidget->GetDisplayedTimelineState(), ETimelineState::RejectedTimeline);
+
+        ClockWidget->UpdateRegionalInstability(38.0f);
+        TestEqual(TEXT("Regional instability score must match"),
+            ClockWidget->GetDisplayedRegionalInstability(), 38.0f);
+    }
+
+    // 2. Verify Forensic Ledger Evidence Population & Filtering
+    UEdrathNarrativeSubsystem* Narrative = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>();
+    TestNotNull(TEXT("Narrative subsystem must be valid for UI tests"), Narrative);
+    if (Narrative)
+    {
+        Narrative->AddOrMutateEvidence(
+            EdrathGameplayTags::Twist1,
+            FText::FromString(TEXT("Handwriting matches ancient archive ledger")),
+            true);
+        Narrative->AddOrMutateEvidence(
+            EdrathGameplayTags::Twist2,
+            FText::FromString(TEXT("Portrait of Kael with scratched-out companion face")),
+            true);
+        Narrative->AddOrMutateEvidence(
+            EdrathGameplayTags::QuestAct1Crypt,
+            FText::FromString(TEXT("Priest skeletal remains verified dead 114 years")),
+            false);
+
+        UForensicLedgerWidget* LedgerWidget = NewObject<UForensicLedgerWidget>(TestWorld);
+        TestNotNull(TEXT("Forensic Ledger Widget must instantiate"), LedgerWidget);
+        if (LedgerWidget)
+        {
+            LedgerWidget->RefreshEvidenceList();
+            TestEqual(TEXT("Total clues in ledger must be 3"), LedgerWidget->GetTotalCluesCount(), 3);
+            TestEqual(TEXT("Twist clues in ledger must be 2"), LedgerWidget->GetTwistCluesCount(), 2);
+
+            LedgerWidget->SetFilterMode(EForensicLedgerFilter::TwistCluesOnly);
+            TestEqual(TEXT("Filtered twist clues count must be 2"), LedgerWidget->GetFilteredEvidenceList().Num(), 2);
+
+            FEdrathEvidenceRecord SelectedClue;
+            TestTrue(TEXT("Selecting evidence by tag must succeed"),
+                LedgerWidget->SelectEvidenceByTag(EdrathGameplayTags::Twist1));
+            TestTrue(TEXT("Retrieved selected evidence must be valid"),
+                LedgerWidget->GetSelectedEvidence(SelectedClue));
+            TestEqual(TEXT("Selected clue tag must match"),
+                SelectedClue.EvidenceTag, EdrathGameplayTags::Twist1);
+        }
+    }
+
+    // 3. Verify Memory Reconstruction Dialogue Widget
+    UMemoryDialogueWidget* DialogueWidget = NewObject<UMemoryDialogueWidget>(TestWorld);
+    TestNotNull(TEXT("Memory Dialogue Widget must instantiate"), DialogueWidget);
+    if (DialogueWidget)
+    {
+        TArray<FText> Choices;
+        Choices.Add(FText::FromString(TEXT("Examine Priest Sarcophagus")));
+        Choices.Add(FText::FromString(TEXT("Confront with 114-Year-Old Ledger")));
+
+        DialogueWidget->DisplayDialogue(
+            FText::FromString(TEXT("Memory of Father Aaron")),
+            FText::FromString(TEXT("You walked these crypts before you were born, Kael.")),
+            Choices);
+
+        TestTrue(TEXT("Dialogue must be marked active"), DialogueWidget->IsDialogueActive());
+        TestEqual(TEXT("Dialogue choices count must be 2"), DialogueWidget->GetCurrentChoices().Num(), 2);
+        TestTrue(TEXT("Choosing valid choice index must succeed"), DialogueWidget->ChooseOption(0));
+
+        DialogueWidget->Dismiss();
+        TestFalse(TEXT("Dialogue must be inactive after dismissal"), DialogueWidget->IsDialogueActive());
+    }
+
+    // 4. Verify AEdrathHUD Actor
+    AEdrathHUD* EdrathHUD = TestWorld->SpawnActor<AEdrathHUD>();
+    TestNotNull(TEXT("AEdrathHUD actor must spawn"), EdrathHUD);
+    if (EdrathHUD)
+    {
+        TestFalse(TEXT("Forensic ledger must be initially closed"), EdrathHUD->IsForensicLedgerOpen());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathSixRegionsWorldActorsTest,
     "Edrath.PreAlpha.SixRegionsWorldActors",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -385,15 +498,27 @@ bool FEdrathQuestAndCompanionSystemsTest::RunTest(const FString&)
     TestFalse(TEXT("Maevra must no longer be hostile after recruitment"), Maevra->IsHostilePursuer());
     TestTrue(TEXT("Maevra must become a party member"), Maevra->IsPartyMember());
 
-    // --- Scalability & Mobile Optimization Verification ---
+    // --- Scalability & Hardware Optimization Verification ---
     UEdrathScalabilitySubsystem* Scalability = GameInstance->GetSubsystem<UEdrathScalabilitySubsystem>();
     TestNotNull(TEXT("Scalability subsystem must exist"), Scalability);
     if (Scalability)
     {
         Scalability->ApplyQualityPreset(EEdrathQualityPreset::Epic_PC);
         TestEqual(TEXT("Scalability must be Epic_PC"), Scalability->GetCurrentQualityPreset(), EEdrathQualityPreset::Epic_PC);
+        Scalability->ApplyQualityPreset(EEdrathQualityPreset::Development_Laptop);
+        TestEqual(TEXT("Scalability must be Development_Laptop"), Scalability->GetCurrentQualityPreset(), EEdrathQualityPreset::Development_Laptop);
         Scalability->ApplyQualityPreset(EEdrathQualityPreset::Low_Mobile);
         TestEqual(TEXT("Scalability must be Low_Mobile"), Scalability->GetCurrentQualityPreset(), EEdrathQualityPreset::Low_Mobile);
+    }
+
+    UEdrathHardwareOptimizationSubsystem* HWOpt = GameInstance->GetSubsystem<UEdrathHardwareOptimizationSubsystem>();
+    TestNotNull(TEXT("Hardware optimization subsystem must exist"), HWOpt);
+    if (HWOpt)
+    {
+        HWOpt->ApplyCameraModeOptimization(EEdrathCameraMode::InteriorThirdPerson);
+        TestEqual(TEXT("Interior camera mode optimization must be active"), HWOpt->GetOptimizedCameraMode(), EEdrathCameraMode::InteriorThirdPerson);
+        HWOpt->OptimizeTimelineMemoryFootprint(ETimelineState::RejectedTimeline);
+        TestEqual(TEXT("Timeline optimization must be RejectedTimeline"), HWOpt->GetOptimizedTimelineState(), ETimelineState::RejectedTimeline);
     }
 
     // --- Kael Attributes & Combat Verification ---
@@ -413,6 +538,114 @@ bool FEdrathQuestAndCompanionSystemsTest::RunTest(const FString&)
         TestTrue(TEXT("Save slot must exist on disk"), SaveSubsystem->DoesSaveSlotExist(TEXT("PreAlpha_TestSlot"), 0));
         TestTrue(TEXT("Load from slot must succeed"), SaveSubsystem->LoadGameFromSlot(TEXT("PreAlpha_TestSlot"), 0));
         SaveSubsystem->DeleteSaveSlot(TEXT("PreAlpha_TestSlot"), 0);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathHUDAndForensicUIVerificationTest,
+    "Edrath.PreAlpha.HUDAndForensicUIVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    // 1. Verify Black Clock HUD Widget state updates
+    UBlackClockWidget* ClockWidget = NewObject<UBlackClockWidget>(TestWorld);
+    TestNotNull(TEXT("Black Clock HUD Widget must instantiate"), ClockWidget);
+    if (ClockWidget)
+    {
+        ClockWidget->UpdateClockStability(75.0f, 100.0f);
+        TestEqual(TEXT("Clock stability percent must match"), ClockWidget->GetDisplayedStabilityPercent(), 75.0f);
+
+        ClockWidget->UpdateTimelineState(ETimelineState::RejectedTimeline);
+        TestEqual(TEXT("Timeline state must reflect RejectedTimeline"),
+            ClockWidget->GetDisplayedTimelineState(), ETimelineState::RejectedTimeline);
+
+        ClockWidget->UpdateRegionalInstability(38.0f);
+        TestEqual(TEXT("Regional instability score must match"),
+            ClockWidget->GetDisplayedRegionalInstability(), 38.0f);
+    }
+
+    // 2. Verify Forensic Ledger Evidence Population & Filtering
+    UEdrathNarrativeSubsystem* Narrative = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>();
+    TestNotNull(TEXT("Narrative subsystem must be valid for UI tests"), Narrative);
+    if (Narrative)
+    {
+        Narrative->AddOrMutateEvidence(
+            EdrathGameplayTags::Twist1,
+            FText::FromString(TEXT("Handwriting matches ancient archive ledger")),
+            true);
+        Narrative->AddOrMutateEvidence(
+            EdrathGameplayTags::Twist2,
+            FText::FromString(TEXT("Portrait of Kael with scratched-out companion face")),
+            true);
+        Narrative->AddOrMutateEvidence(
+            EdrathGameplayTags::QuestAct1Crypt,
+            FText::FromString(TEXT("Priest skeletal remains verified dead 114 years")),
+            false);
+
+        UForensicLedgerWidget* LedgerWidget = NewObject<UForensicLedgerWidget>(TestWorld);
+        TestNotNull(TEXT("Forensic Ledger Widget must instantiate"), LedgerWidget);
+        if (LedgerWidget)
+        {
+            LedgerWidget->RefreshEvidenceList();
+            TestEqual(TEXT("Total clues in ledger must be 3"), LedgerWidget->GetTotalCluesCount(), 3);
+            TestEqual(TEXT("Twist clues in ledger must be 2"), LedgerWidget->GetTwistCluesCount(), 2);
+
+            LedgerWidget->SetFilterMode(EForensicLedgerFilter::TwistCluesOnly);
+            TestEqual(TEXT("Filtered twist clues count must be 2"), LedgerWidget->GetFilteredEvidenceList().Num(), 2);
+
+            FEdrathEvidenceRecord SelectedClue;
+            TestTrue(TEXT("Selecting evidence by tag must succeed"),
+                LedgerWidget->SelectEvidenceByTag(EdrathGameplayTags::Twist1));
+            TestTrue(TEXT("Retrieved selected evidence must be valid"),
+                LedgerWidget->GetSelectedEvidence(SelectedClue));
+            TestEqual(TEXT("Selected clue tag must match"),
+                SelectedClue.EvidenceTag, EdrathGameplayTags::Twist1);
+        }
+    }
+
+    // 3. Verify Memory Reconstruction Dialogue Widget
+    UMemoryDialogueWidget* DialogueWidget = NewObject<UMemoryDialogueWidget>(TestWorld);
+    TestNotNull(TEXT("Memory Dialogue Widget must instantiate"), DialogueWidget);
+    if (DialogueWidget)
+    {
+        TArray<FText> Choices;
+        Choices.Add(FText::FromString(TEXT("Examine Priest Sarcophagus")));
+        Choices.Add(FText::FromString(TEXT("Confront with 114-Year-Old Ledger")));
+
+        DialogueWidget->DisplayDialogue(
+            FText::FromString(TEXT("Memory of Father Aaron")),
+            FText::FromString(TEXT("You walked these crypts before you were born, Kael.")),
+            Choices);
+
+        TestTrue(TEXT("Dialogue must be marked active"), DialogueWidget->IsDialogueActive());
+        TestEqual(TEXT("Dialogue choices count must be 2"), DialogueWidget->GetCurrentChoices().Num(), 2);
+        TestTrue(TEXT("Choosing valid choice index must succeed"), DialogueWidget->ChooseOption(0));
+
+        DialogueWidget->Dismiss();
+        TestFalse(TEXT("Dialogue must be inactive after dismissal"), DialogueWidget->IsDialogueActive());
+    }
+
+    // 4. Verify AEdrathHUD Actor
+    AEdrathHUD* EdrathHUD = TestWorld->SpawnActor<AEdrathHUD>();
+    TestNotNull(TEXT("AEdrathHUD actor must spawn"), EdrathHUD);
+    if (EdrathHUD)
+    {
+        TestFalse(TEXT("Forensic ledger must be initially closed"), EdrathHUD->IsForensicLedgerOpen());
     }
 
     TestWorld->DestroyWorld(false);
