@@ -131,3 +131,51 @@ struct FCompanionRelationshipState
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Companions")
     bool bHasTurnedHostileInNhal = false;
 };
+
+UENUM(BlueprintType)
+enum class EEdrathReticleMode : uint8
+{
+    IsometricCursor,
+    ThirdPersonCrosshair,
+    ForensicInspectFocus,
+    Hidden
+};
+
+USTRUCT(BlueprintType)
+struct FContradictionDeductionRule
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Deduction")
+    FGameplayTag PrimaryClueTag;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Deduction")
+    FGameplayTag ContradictoryClueTag;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Deduction")
+    FText ResolutionNarrative;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Deduction")
+    FGameplayTag BreakthroughTag;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Deduction")
+    bool bBreaksSettlementLoop = false;
+};
+
+USTRUCT(BlueprintType)
+struct FContradictionResolutionResult
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Deduction")
+    bool bSuccess = false;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Deduction")
+    FText RevelationTitle;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Deduction")
+    FText RevelationBody;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Deduction")
+    FGameplayTag BreakthroughTag;
+};
