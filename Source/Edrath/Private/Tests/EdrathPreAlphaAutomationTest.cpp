@@ -26,6 +26,10 @@
 #include "UI/ForensicLedgerWidget.h"
 #include "UI/MemoryDialogueWidget.h"
 #include "UI/EdrathHUD.h"
+#include "UI/EdrathReticleWidget.h"
+#include "UI/EchoCombatBufferWidget.h"
+#include "UI/ForensicContradictionWidget.h"
+#include "UI/EdrathTouchControlsWidget.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -646,6 +650,134 @@ bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
     if (EdrathHUD)
     {
         TestFalse(TEXT("Forensic ledger must be initially closed"), EdrathHUD->IsForensicLedgerOpen());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathFullUIAndHUDArchitectureVerificationTest,
+    "Edrath.PreAlpha.FullUIAndHUDArchitectureVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathFullUIAndHUDArchitectureVerificationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    // 1. Verify Dual-Perspective Reticle & Inspection Prompt Widget
+    UEdrathReticleWidget* Reticle = NewObject<UEdrathReticleWidget>(TestWorld);
+    TestNotNull(TEXT("Reticle widget must instantiate"), Reticle);
+    if (Reticle)
+    {
+        TestEqual(TEXT("Initial reticle mode must be IsometricCursor"),
+            Reticle->GetReticleMode(), EEdrathReticleMode::IsometricCursor);
+
+        Reticle->SetCameraPerspectiveMode(EEdrathCameraMode::InteriorThirdPerson);
+        TestEqual(TEXT("Camera shift to interior must update reticle to ThirdPersonCrosshair"),
+            Reticle->GetReticleMode(), EEdrathReticleMode::ThirdPersonCrosshair);
+
+        Reticle->SetForensicFocus(true, FText::FromString(TEXT("Handwriting desk inspection")));
+        TestTrue(TEXT("Forensic focus state must be active"), Reticle->IsForensicFocusActive());
+        TestEqual(TEXT("Reticle mode must transition to ForensicInspectFocus"),
+            Reticle->GetReticleMode(), EEdrathReticleMode::ForensicInspectFocus);
+
+        Reticle->SetInspectionPrompt(
+            FText::FromString(TEXT("[E] Examine Sarcophagus")),
+            FText::FromString(TEXT("114-Year-Dead Priest Tomb")),
+            true);
+        TestTrue(TEXT("Reticle must have active inspection prompt"), Reticle->HasActiveInspectionPrompt());
+        TestEqual(TEXT("Inspection action text must match"),
+            Reticle->GetInspectionActionText().ToString(), TEXT("[E] Examine Sarcophagus"));
+
+        Reticle->ClearInspectionPrompt();
+        TestFalse(TEXT("Inspection prompt must be cleared"), Reticle->HasActiveInspectionPrompt());
+
+        Reticle->SetIsometricTelegraph(750.0f, true);
+        TestEqual(TEXT("Isometric telegraph radius must match"), Reticle->GetIsometricTelegraphRadius(), 750.0f);
+    }
+
+    // 2. Verify Echo Combat Action & 120-Frame Timeline Buffer Widget
+    UEchoCombatBufferWidget* EchoWidget = NewObject<UEchoCombatBufferWidget>(TestWorld);
+    TestNotNull(TEXT("Echo combat buffer widget must instantiate"), EchoWidget);
+    if (EchoWidget)
+    {
+        EchoWidget->UpdateBufferMetrics(60, 120);
+        TestEqual(TEXT("Echo buffer stored frames must be 60"), EchoWidget->GetStoredFrames(), 60);
+        TestEqual(TEXT("Echo buffer fill ratio must be 0.5f"), EchoWidget->GetBufferFillRatio(), 0.5f);
+
+        EchoWidget->PushActionRecord(FName(TEXT("Slash_Combo_01")), 30.0f);
+        EchoWidget->PushActionRecord(FName(TEXT("Parry_Counter")), 50.0f);
+        TestEqual(TEXT("Recent actions count must be 2"), EchoWidget->GetRecentActionHistory().Num(), 2);
+        TestEqual(TEXT("Most recent action must be Parry_Counter"),
+            EchoWidget->GetRecentActionHistory()[0], FName(TEXT("Parry_Counter")));
+
+        EchoWidget->SetStrikeDelay(1.2f);
+        TestEqual(TEXT("Echo strike delay must be 1.2s"), EchoWidget->GetStrikeDelay(), 1.2f);
+
+        EchoWidget->SetRegionalResonance(EEdrathRegion::Nhal);
+        TestEqual(TEXT("Regional resonance must be Nhal"),
+            EchoWidget->GetActiveRegionalResonance(), EEdrathRegion::Nhal);
+
+        EchoWidget->UpdateCooldown(2.5f, 5.0f);
+        TestFalse(TEXT("Echo strike should not be ready during cooldown"), EchoWidget->IsEchoStrikeReady());
+        TestEqual(TEXT("Cooldown progress must be 50%"), EchoWidget->GetCooldownPercent(), 0.5f);
+    }
+
+    // 3. Verify Forensic Contradiction Deduction Board
+    UForensicContradictionWidget* ContradictionWidget = NewObject<UForensicContradictionWidget>(TestWorld);
+    TestNotNull(TEXT("Contradiction widget must instantiate"), ContradictionWidget);
+    if (ContradictionWidget)
+    {
+        ContradictionWidget->RegisterDefaultDeductionRules();
+
+        // Test unresolved deduction with mismatching clues
+        ContradictionWidget->SlotPrimaryClue(EdrathGameplayTags::QuestDragonNoFire);
+        ContradictionWidget->SlotContradictoryClue(EdrathGameplayTags::Twist1);
+        FContradictionResolutionResult MismatchResult = ContradictionWidget->AttemptResolveContradiction();
+        TestFalse(TEXT("Mismatched clues must not resolve a contradiction"), MismatchResult.bSuccess);
+
+        // Test valid Act 1 Crypt priest contradiction resolution
+        ContradictionWidget->SlotPrimaryClue(EdrathGameplayTags::QuestAct1Crypt);
+        ContradictionWidget->SlotContradictoryClue(EdrathGameplayTags::Twist1);
+        TestTrue(TEXT("Both slots must be filled"), ContradictionWidget->AreBothSlotsFilled());
+
+        FContradictionResolutionResult ValidResult = ContradictionWidget->AttemptResolveContradiction();
+        TestTrue(TEXT("Matching deduction must successfully resolve contradiction"), ValidResult.bSuccess);
+        TestEqual(TEXT("Breakthrough tag must match Twist1"),
+            ValidResult.BreakthroughTag, EdrathGameplayTags::Twist1);
+        TestTrue(TEXT("Breakthrough must be recorded in resolved list"),
+            ContradictionWidget->HasBreakthroughBeenResolved(EdrathGameplayTags::Twist1));
+        TestEqual(TEXT("Total resolved breakthroughs must be 1"),
+            ContradictionWidget->GetResolvedContradictionCount(), 1);
+    }
+
+    // 4. Verify Mobile / Touch Controls Overlay Widget
+    UEdrathTouchControlsWidget* TouchControls = NewObject<UEdrathTouchControlsWidget>(TestWorld);
+    TestNotNull(TEXT("Touch controls widget must instantiate"), TouchControls);
+    if (TouchControls)
+    {
+        TouchControls->SetTouchControlsActive(true);
+        TestTrue(TEXT("Touch controls must be marked active"), TouchControls->IsTouchControlsActive());
+        TouchControls->SetTouchControlsActive(false);
+        TestFalse(TEXT("Touch controls must be inactive"), TouchControls->IsTouchControlsActive());
+    }
+
+    // 5. Verify Master AEdrathHUD Integration
+    AEdrathHUD* MasterHUD = TestWorld->SpawnActor<AEdrathHUD>();
+    TestNotNull(TEXT("Master AEdrathHUD must spawn"), MasterHUD);
+    if (MasterHUD)
+    {
+        TestFalse(TEXT("Contradiction board must be initially closed"), MasterHUD->IsContradictionBoardOpen());
     }
 
     TestWorld->DestroyWorld(false);

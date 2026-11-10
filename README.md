@@ -1835,3 +1835,30 @@ Then push to your branch:
 ```bash
 git push origin main
 ```
+
+---
+
+## 12. UI & HUD Architecture Milestone (4 Commits)
+
+The UI & HUD Architecture is packaged into 4 clean, discrete commits:
+
+| Commit # | Conventional Commit Scope | Key Modifications |
+| :---: | :--- | :--- |
+| **1** | `feat(ui): add dynamic dual-perspective reticle and inspection prompt HUD` | `Source/Edrath/Public/Core/EdrathTypes.h`, `Source/Edrath/Public/UI/EdrathReticleWidget.h`, `Source/Edrath/Private/UI/EdrathReticleWidget.cpp` |
+| **2** | `feat(ui): implement Echo Combat 120-frame timeline buffer and cooldown gauge` | `Source/Edrath/Public/UI/EchoCombatBufferWidget.h`, `Source/Edrath/Private/UI/EchoCombatBufferWidget.cpp` |
+| **3** | `feat(ui): implement Forensic Contradiction deduction board and evidence linking` | `Source/Edrath/Public/UI/ForensicContradictionWidget.h`, `Source/Edrath/Private/UI/ForensicContradictionWidget.cpp` |
+| **4** | `feat(ui): integrate master EdrathHUD, mobile touch controls, automation tests, and docs` | `Source/Edrath/Public/UI/EdrathTouchControlsWidget.h`, `Source/Edrath/Private/UI/EdrathTouchControlsWidget.cpp`, `Source/Edrath/Public/UI/EdrathHUD.h`, `Source/Edrath/Private/UI/EdrathHUD.cpp`, `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp`, `CHANGELOG.md`, `README.md`, `Scripts/create_ui_hud_commits.sh`, `Scripts/create_ui_hud_commits.bat` |
+
+To stage and create these 4 commits sequentially on your device:
+```bash
+# On Linux / macOS / WSL / Termux:
+chmod +x Scripts/create_ui_hud_commits.sh
+./Scripts/create_ui_hud_commits.sh
+
+# On Windows:
+.\Scripts\create_ui_hud_commits.bat
+```
+Then push to your branch:
+```bash
+git push origin main
+```
