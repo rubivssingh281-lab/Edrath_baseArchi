@@ -8,9 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Assembly of Pre-Alpha Act 1 playable vertical slice (*The Man Who Was Never Born*).
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
 - Sentry native C++ crash reporter integration in `Plugins/Sentry`.
+- Act 2 Veyl royal court memory reconstruction investigation.
+
+## [0.5.0] - 2026-11-11
+
+### Added
+- **Stage 2 Pre-Alpha Playable Vertical Slice (*The Man Who Was Never Born*)**:
+  - **Zone 1: Ancient Battlefield Awakening**:
+    - Implemented `ABattlefieldWraithCharacter` (`Source/Edrath/Public/Character/BattlefieldWraithCharacter.h`, `Source/Edrath/Private/Character/BattlefieldWraithCharacter.cpp`) featuring dual timeline phase shield and vulnerability to Kael's 120-frame Echo Strikes (`TriggerEchoStrike(1.2f)`).
+    - Implemented `ADyingSoldierActor` (`Source/Edrath/Public/World/DyingSoldierActor.h`, `Source/Edrath/Private/World/DyingSoldierActor.cpp`) broadcasting the iconic dialogue (*"Do not let my daughter be born"*) and registering initial forensic evidence.
+  - **Zone 2: Collapsed Gorge Bridge**:
+    - Implemented `AAct1GorgeBridgeActor` (`Source/Edrath/Public/World/Act1GorgeBridgeActor.h`, `Source/Edrath/Private/World/Act1GorgeBridgeActor.cpp`) with proximity chasm detection and Possibility Shift restoration from shattered ruins to an intact monolithic stone archway.
+  - **Zone 3: 7-Day Looping Settlement**:
+    - Implemented `ASettlementVillagerCharacter` (`Source/Edrath/Public/Character/SettlementVillagerCharacter.h`, `Source/Edrath/Private/Character/SettlementVillagerCharacter.cpp`) reacting dynamically to `OnSettlementLoopReset` with contextual amnesia dialogue branches across Days 1–6, Day 7 dread, and broken loop liberation.
+  - **Zone 4: Kael's Settlement House (Interior Inspection)**:
+    - Implemented `AKaelHouseInteriorActor` (`Source/Edrath/Public/World/KaelHouseInteriorActor.h`, `Source/Edrath/Private/World/KaelHouseInteriorActor.cpp`) handling real-time exterior roof hiding, seamless OTS third-person camera transitions, and forensic desk handwriting and scratched woman portrait clues.
+  - **Zone 5: Local Crypt & The 114-Year-Dead Priest**:
+    - Implemented `APriestCorpseActor` (`Source/Edrath/Public/World/PriestCorpseActor.h`, `Source/Edrath/Private/World/PriestCorpseActor.cpp`) combining skeletal sarcophagus forensic inspection with `AMemoryReconstructionAnchor` to shatter the 7-day settlement loop and expose the priest's memory echo.
+  - **Master Level Script & World Partition Orchestration**:
+    - Implemented `AAct1BattlefieldLevelScriptActor` (`Source/Edrath/Public/World/Act1BattlefieldLevelScriptActor.h`, `Source/Edrath/Private/World/Act1BattlefieldLevelScriptActor.cpp`) binding all 5 zones, director, and completion state.
+    - Added level manifest (`Content/Maps/PreAlpha_Act1/L_PreAlpha_Act1_Manifest.json`) and World Partition Data Layers (`DataLayer_PresentTimeline.json`, `DataLayer_RejectedTimeline.json`, `DataLayer_MemoryEcho.json`).
+  - **Automated Verification Test**:
+    - Added `FEdrathStage2ComprehensiveVerticalSlicePlaythroughTest` in `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp` validating all 5 zones end-to-end.
 
 ## [0.4.0] - 2026-11-10
 

@@ -1862,3 +1862,34 @@ Then push to your branch:
 ```bash
 git push origin main
 ```
+
+---
+
+## 13. Stage 2 — Pre-Alpha Playable Vertical Slice Milestone (5 Commits)
+
+The complete 5-zone playable vertical slice of **Act I (*The Man Who Was Never Born*)** is packaged into **5 discrete, sequential commits**:
+
+| Commit # | Conventional Commit Scope | Key Modifications & Subsystems Added |
+| :---: | :--- | :--- |
+| **1** | `feat(act1): implement Zone 1 battlefield awakening, dying soldier narrative actor, and battlefield wraith echo combat enemy` | `Source/Edrath/Public/Core/EdrathGameplayTags.h`, `Source/Edrath/Private/Core/EdrathGameplayTags.cpp`, `Source/Edrath/Public/Character/BattlefieldWraithCharacter.h`, `Source/Edrath/Private/Character/BattlefieldWraithCharacter.cpp`, `Source/Edrath/Public/World/DyingSoldierActor.h`, `Source/Edrath/Private/World/DyingSoldierActor.cpp` |
+| **2** | `feat(act1): implement Zone 2 gorge bridge possibility shifting and Zone 3 looping settlement villager agency` | `Source/Edrath/Public/BlackClock/PossibilityShiftActor.h`, `Source/Edrath/Public/World/Act1GorgeBridgeActor.h`, `Source/Edrath/Private/World/Act1GorgeBridgeActor.cpp`, `Source/Edrath/Public/Character/SettlementVillagerCharacter.h`, `Source/Edrath/Private/Character/SettlementVillagerCharacter.cpp` |
+| **3** | `feat(act1): implement Zone 4 house forensic clues and Zone 5 crypt 114-year-dead priest memory reconstruction` | `Source/Edrath/Public/World/KaelHouseInteriorActor.h`, `Source/Edrath/Private/World/KaelHouseInteriorActor.cpp`, `Source/Edrath/Public/World/PriestCorpseActor.h`, `Source/Edrath/Private/World/PriestCorpseActor.cpp` |
+| **4** | `feat(act1): scaffold PreAlpha_Act1 level script actor, world partition data layers, and automated 5-zone vertical slice tests` | `Source/Edrath/Public/World/Act1BattlefieldLevelScriptActor.h`, `Source/Edrath/Private/World/Act1BattlefieldLevelScriptActor.cpp`, `Content/Maps/PreAlpha_Act1/L_PreAlpha_Act1_Manifest.json`, `Content/Maps/PreAlpha_Act1/DataLayers/*.json`, `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp` |
+| **5** | `docs(stage2): update CHANGELOG, README, and provide 5-commit automated git packaging scripts` | `CHANGELOG.md`, `README.md`, `Scripts/create_stage2_commits.sh`, `Scripts/create_stage2_commits.bat`, `Scripts/apply_stage2_git_commits.py` |
+
+To stage and create these 5 commits sequentially on your device:
+```bash
+# On Linux / macOS / WSL / Termux:
+chmod +x Scripts/create_stage2_commits.sh
+./Scripts/create_stage2_commits.sh
+
+# Or via Python (works in any terminal environment):
+python3 Scripts/apply_stage2_git_commits.py
+
+# On Windows:
+.\Scripts\create_stage2_commits.bat
+```
+Then push to your branch:
+```bash
+git push origin main
+```
