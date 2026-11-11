@@ -1,0 +1,74 @@
+{
+  "MapName": "L_PreAlpha_Act1_BattlefieldAndCrypt",
+  "EngineTarget": "Unreal Engine 5.5+",
+  "LevelScriptActor": "/Script/Edrath.Act1BattlefieldLevelScriptActor",
+  "WorldPartition": {
+    "Enabled": true,
+    "CellSize": 12800,
+    "LoadingRange": 25600,
+    "OneFilePerActor": true
+  },
+  "Zones": [
+    {
+      "ZoneId": 1,
+      "Name": "The Ancient Battlefield",
+      "CameraMode": "ExteriorBirdsEye",
+      "CameraPitch": -38.0,
+      "CameraArmLength": 1150.0,
+      "CameraFOV": 28.0,
+      "Location": { "X": 0.0, "Y": 0.0, "Z": 0.0 },
+      "Actors": [
+        { "Class": "AKaelCharacter", "Role": "PlayerStart", "Location": { "X": 0.0, "Y": 0.0, "Z": 92.0 } },
+        { "Class": "ADyingSoldierActor", "Role": "DyingSoldierNarrative", "Location": { "X": 350.0, "Y": 120.0, "Z": 10.0 } },
+        { "Class": "ABattlefieldWraithCharacter", "Role": "EnemyWraith_01", "Location": { "X": 850.0, "Y": -200.0, "Z": 92.0 } },
+        { "Class": "ABattlefieldWraithCharacter", "Role": "EnemyWraith_02", "Location": { "X": 1100.0, "Y": 50.0, "Z": 92.0 } },
+        { "Class": "ABattlefieldWraithCharacter", "Role": "EnemyWraith_03", "Location": { "X": 1350.0, "Y": 250.0, "Z": 92.0 } }
+      ]
+    },
+    {
+      "ZoneId": 2,
+      "Name": "The Collapsed Gorge Bridge",
+      "CameraMode": "ExteriorBirdsEye",
+      "Location": { "X": 2200.0, "Y": 0.0, "Z": -50.0 },
+      "Actors": [
+        { "Class": "AAct1GorgeBridgeActor", "Role": "PossibilityShiftBridge", "Location": { "X": 2200.0, "Y": 0.0, "Z": -50.0 } }
+      ]
+    },
+    {
+      "ZoneId": 3,
+      "Name": "The 7-Day Looping Settlement (Exterior Streets)",
+      "CameraMode": "ExteriorBirdsEye",
+      "Location": { "X": 4500.0, "Y": 200.0, "Z": 100.0 },
+      "Actors": [
+        { "Class": "ABeliefBuildingActor", "Role": "VillageShrine", "Location": { "X": 4500.0, "Y": 200.0, "Z": 100.0 } },
+        { "Class": "ASettlementVillagerCharacter", "Role": "VillagerBram", "Location": { "X": 4200.0, "Y": 150.0, "Z": 100.0 } },
+        { "Class": "ATimeLoopSettlementManager", "Role": "SettlementLoopManager", "Location": { "X": 4500.0, "Y": 400.0, "Z": 100.0 } }
+      ]
+    },
+    {
+      "ZoneId": 4,
+      "Name": "Kael's Settlement House (Interior Inspection)",
+      "CameraMode": "InteriorThirdPerson",
+      "CameraPitch": -12.0,
+      "CameraArmLength": 240.0,
+      "CameraFOV": 75.0,
+      "Location": { "X": 5400.0, "Y": 1200.0, "Z": 120.0 },
+      "Actors": [
+        { "Class": "AKaelHouseInteriorActor", "Role": "KaelHouse", "Location": { "X": 5400.0, "Y": 1200.0, "Z": 120.0 } },
+        { "Class": "AForensicClueActor", "Role": "HandwritingDeskClue", "EvidenceTag": "Evidence.Act1.Handwriting", "Location": { "X": 5450.0, "Y": 1250.0, "Z": 150.0 } },
+        { "Class": "AForensicClueActor", "Role": "ScratchedPortraitClue", "EvidenceTag": "Evidence.Act1.ScratchedPortrait", "Location": { "X": 5350.0, "Y": 1300.0, "Z": 180.0 } }
+      ]
+    },
+    {
+      "ZoneId": 5,
+      "Name": "The Local Crypt & The 114-Year-Dead Priest",
+      "CameraMode": "InteriorThirdPerson",
+      "Location": { "X": 7200.0, "Y": -800.0, "Z": -350.0 },
+      "Actors": [
+        { "Class": "APossibilityShiftActor", "Role": "CryptPortcullis", "Location": { "X": 6800.0, "Y": -800.0, "Z": -300.0 } },
+        { "Class": "APriestCorpseActor", "Role": "PriestSarcophagus", "Location": { "X": 7400.0, "Y": -800.0, "Z": -350.0 } },
+        { "Class": "AAct1PreAlphaSliceDirector", "Role": "SliceDirector", "Location": { "X": 0.0, "Y": 0.0, "Z": 0.0 } }
+      ]
+    }
+  ]
+}

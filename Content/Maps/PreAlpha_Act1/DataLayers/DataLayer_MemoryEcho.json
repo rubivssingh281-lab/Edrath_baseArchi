@@ -1,0 +1,8 @@
+{
+  "DataLayerAsset": "DataLayer_MemoryEcho",
+  "DataLayerType": "Runtime",
+  "InitialRuntimeState": "Unloaded",
+  "bIsSpatial": true,
+  "TargetPlatforms": ["All"],
+  "Description": "Memory reconstruction echoes streamed dynamically when Kael accesses memory anchors (e.g. 114-year-dead settlement priest)."
+}

@@ -1,0 +1,8 @@
+{
+  "DataLayerAsset": "DataLayer_PresentTimeline",
+  "DataLayerType": "Runtime",
+  "InitialRuntimeState": "Activated",
+  "bIsSpatial": true,
+  "TargetPlatforms": ["All"],
+  "Description": "Active default reality in Edrath. Nanite virtualized meshes enabled for ruins, ground splines, and standard structures."
+}

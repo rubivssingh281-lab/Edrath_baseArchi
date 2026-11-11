@@ -30,6 +30,13 @@
 #include "UI/EchoCombatBufferWidget.h"
 #include "UI/ForensicContradictionWidget.h"
 #include "UI/EdrathTouchControlsWidget.h"
+#include "Character/BattlefieldWraithCharacter.h"
+#include "World/DyingSoldierActor.h"
+#include "World/Act1GorgeBridgeActor.h"
+#include "Character/SettlementVillagerCharacter.h"
+#include "World/KaelHouseInteriorActor.h"
+#include "World/PriestCorpseActor.h"
+#include "World/Act1BattlefieldLevelScriptActor.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -96,6 +103,7 @@ bool FEdrathPreAlphaVerticalSliceTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathAct1PreAlphaFiveZoneTest,
@@ -215,6 +223,7 @@ bool FEdrathAct1PreAlphaFiveZoneTest::RunTest(const FString&)
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathHUDAndForensicUIVerificationTest,
     "Edrath.PreAlpha.HUDAndForensicUIVerification",
@@ -323,6 +332,7 @@ bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathSixRegionsWorldActorsTest,
     "Edrath.PreAlpha.SixRegionsWorldActors",
@@ -400,6 +410,7 @@ bool FEdrathSixRegionsWorldActorsTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathQuestAndCompanionSystemsTest,
@@ -548,6 +559,7 @@ bool FEdrathQuestAndCompanionSystemsTest::RunTest(const FString&)
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathHUDAndForensicUIVerificationTest,
     "Edrath.PreAlpha.HUDAndForensicUIVerification",
@@ -655,6 +667,7 @@ bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathFullUIAndHUDArchitectureVerificationTest,
@@ -783,3 +796,183 @@ bool FEdrathFullUIAndHUDArchitectureVerificationTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathStage2ComprehensiveVerticalSlicePlaythroughTest,
+    "Edrath.PreAlpha.Stage2ComprehensiveVerticalSlicePlaythrough",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathStage2ComprehensiveVerticalSlicePlaythroughTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    // 1. Instantiate Core Actors
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    ADyingSoldierActor* DyingSoldier = TestWorld->SpawnActor<ADyingSoldierActor>();
+    ABattlefieldWraithCharacter* Wraith1 = TestWorld->SpawnActor<ABattlefieldWraithCharacter>();
+    ABattlefieldWraithCharacter* Wraith2 = TestWorld->SpawnActor<ABattlefieldWraithCharacter>();
+    ABattlefieldWraithCharacter* Wraith3 = TestWorld->SpawnActor<ABattlefieldWraithCharacter>();
+    AAct1GorgeBridgeActor* GorgeBridge = TestWorld->SpawnActor<AAct1GorgeBridgeActor>();
+    ASettlementVillagerCharacter* Villager = TestWorld->SpawnActor<ASettlementVillagerCharacter>();
+    ABeliefBuildingActor* Shrine = TestWorld->SpawnActor<ABeliefBuildingActor>();
+    AKaelHouseInteriorActor* KaelHouse = TestWorld->SpawnActor<AKaelHouseInteriorActor>();
+    AForensicClueActor* HandwritingClue = TestWorld->SpawnActor<AForensicClueActor>();
+    AForensicClueActor* PortraitClue = TestWorld->SpawnActor<AForensicClueActor>();
+    APossibilityShiftActor* Portcullis = TestWorld->SpawnActor<APossibilityShiftActor>();
+    APriestCorpseActor* PriestCorpse = TestWorld->SpawnActor<APriestCorpseActor>();
+    AAct1PreAlphaSliceDirector* Director = TestWorld->SpawnActor<AAct1PreAlphaSliceDirector>();
+    AAct1BattlefieldLevelScriptActor* LevelScript = TestWorld->SpawnActor<AAct1BattlefieldLevelScriptActor>();
+
+    TestNotNull(TEXT("Kael must spawn cleanly"), Kael);
+    TestNotNull(TEXT("DyingSoldier must spawn cleanly"), DyingSoldier);
+    TestNotNull(TEXT("Wraith1 must spawn"), Wraith1);
+    TestNotNull(TEXT("GorgeBridge must spawn"), GorgeBridge);
+    TestNotNull(TEXT("Villager must spawn"), Villager);
+    TestNotNull(TEXT("Shrine must spawn"), Shrine);
+    TestNotNull(TEXT("KaelHouse must spawn"), KaelHouse);
+    TestNotNull(TEXT("HandwritingClue must spawn"), HandwritingClue);
+    TestNotNull(TEXT("PortraitClue must spawn"), PortraitClue);
+    TestNotNull(TEXT("Portcullis must spawn"), Portcullis);
+    TestNotNull(TEXT("PriestCorpse must spawn"), PriestCorpse);
+    TestNotNull(TEXT("Director must spawn"), Director);
+    TestNotNull(TEXT("LevelScript must spawn"), LevelScript);
+
+    if (!Kael || !DyingSoldier || !Wraith1 || !GorgeBridge || !Villager || !Shrine ||
+        !KaelHouse || !HandwritingClue || !PortraitClue || !Portcullis || !PriestCorpse || !Director || !LevelScript)
+    {
+        TestWorld->DestroyWorld(false);
+        return false;
+    }
+
+    // Configure Clues
+    HandwritingClue->EvidenceTag = EdrathGameplayTags::EvidenceHandwriting;
+    HandwritingClue->InitialDescription = FText::FromString(TEXT("Kael's handwriting dated 7 days in the future."));
+    PortraitClue->EvidenceTag = EdrathGameplayTags::EvidenceScratchedPortrait;
+    PortraitClue->InitialDescription = FText::FromString(TEXT("Portrait of Kael with woman whose face is scratched out."));
+    KaelHouse->HandwritingClue = HandwritingClue;
+    KaelHouse->ScratchedPortraitClue = PortraitClue;
+
+    // Configure Director & LevelScript
+    Director->GorgeBridge = GorgeBridge;
+    Director->CryptPortcullis = Portcullis;
+    Director->VillageShrine = Shrine;
+    Director->HandwritingEvidenceTag = EdrathGameplayTags::EvidenceHandwriting;
+    Director->ScratchedPortraitEvidenceTag = EdrathGameplayTags::EvidenceScratchedPortrait;
+    Director->PriestMemoryAnchorTag = EdrathGameplayTags::QuestAct1Crypt;
+
+    LevelScript->PlayerCharacter = Kael;
+    LevelScript->SliceDirector = Director;
+    LevelScript->DyingSoldier = DyingSoldier;
+    LevelScript->BattlefieldWraiths.Add(Wraith1);
+    LevelScript->BattlefieldWraiths.Add(Wraith2);
+    LevelScript->BattlefieldWraiths.Add(Wraith3);
+    LevelScript->GorgeBridge = GorgeBridge;
+    LevelScript->SettlementVillager = Villager;
+    LevelScript->SettlementShrine = Shrine;
+    LevelScript->KaelHouse = KaelHouse;
+    LevelScript->CryptPortcullis = Portcullis;
+    LevelScript->PriestCorpse = PriestCorpse;
+    LevelScript->AssembleVerticalSlice();
+
+    // -------------------------------------------------------------
+    // ZONE 1: The Ancient Battlefield
+    // -------------------------------------------------------------
+    TestEqual(TEXT("Slice begins in Zone 1"),
+        Director->GetCurrentZone(), EPreAlphaZoneState::Zone1_BattlefieldAwakening);
+    TestEqual(TEXT("Initial camera must be ExteriorBirdsEye"),
+        Kael->DualCameraComponent->GetCurrentCameraMode(), EEdrathCameraMode::ExteriorBirdsEye);
+
+    // Test dying soldier interaction
+    TestTrue(TEXT("Dying soldier interaction must succeed"), DyingSoldier->TriggerDialogue(Kael));
+    TestTrue(TEXT("Dying soldier dialogue state must be recorded"), DyingSoldier->HasTriggeredDialogue());
+    TestTrue(TEXT("Dying soldier dialogue line must match specification"),
+        DyingSoldier->SpokenDialogue.EqualTo(FText::FromString(TEXT("Do not let my daughter be born"))));
+
+    // Test Echo Combat against Battlefield Wraiths
+    Director->BattlefieldWraithCount = 3;
+    TestTrue(TEXT("Echo Strike must damage and stagger Wraith 1"), Wraith1->TakeEchoStrikeDamage(60.0f, Kael, 1.2f));
+    TestTrue(TEXT("Wraith 1 must be marked defeated"), Wraith1->IsDefeated());
+
+    TestTrue(TEXT("Echo Strike must damage and stagger Wraith 2"), Wraith2->TakeEchoStrikeDamage(60.0f, Kael, 1.2f));
+    TestTrue(TEXT("Wraith 2 must be marked defeated"), Wraith2->IsDefeated());
+
+    TestTrue(TEXT("Echo Strike must damage and stagger Wraith 3"), Wraith3->TakeEchoStrikeDamage(60.0f, Kael, 1.2f));
+    TestTrue(TEXT("Wraith 3 must be marked defeated"), Wraith3->IsDefeated());
+
+    TestEqual(TEXT("All 3 wraiths defeated advances to Zone 2"),
+        Director->GetCurrentZone(), EPreAlphaZoneState::Zone2_CollapsedGorgeBridge);
+
+    // -------------------------------------------------------------
+    // ZONE 2: The Collapsed Gorge Bridge
+    // -------------------------------------------------------------
+    TestFalse(TEXT("Bridge is initially impassable in present timeline"), GorgeBridge->IsPassable());
+    GorgeBridge->ApplyTimelineState(ETimelineState::RejectedTimeline);
+    TestTrue(TEXT("Possibility Shift restores bridge to passable rejected timeline"), GorgeBridge->IsPassable());
+    TestEqual(TEXT("Restored gorge bridge advances to Zone 3"),
+        Director->GetCurrentZone(), EPreAlphaZoneState::Zone3_LoopingSettlementExterior);
+
+    // -------------------------------------------------------------
+    // ZONE 3: The 7-Day Looping Settlement
+    // -------------------------------------------------------------
+    UEdrathNarrativeSubsystem* NarrativeSys = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>();
+    TestNotNull(TEXT("Narrative subsystem must be valid"), NarrativeSys);
+    NarrativeSys->SetCitizenBeliefWeight(Shrine->BuildingBeliefTag, 1.0f);
+
+    const FText Day1Text = Villager->GetContextualDialogue();
+    TestTrue(TEXT("Day 1 villager recognizes Kael"), Day1Text.ToString().Contains(TEXT("Welcome back, Kael!")));
+
+    // Advance 7 days of the temporal loop
+    for (int32 Day = 0; Day < 7; ++Day)
+    {
+        TestTrue(TEXT("Settlement day must advance"), Director->AdvanceSettlementDay());
+    }
+    TestEqual(TEXT("Looping settlement completes cycle and advances to Zone 4"),
+        Director->GetCurrentZone(), EPreAlphaZoneState::Zone4_KaelHouseForensics);
+
+    // -------------------------------------------------------------
+    // ZONE 4: Kael's Settlement House (Interior Inspection)
+    // -------------------------------------------------------------
+    KaelHouse->SetInteriorMode(true);
+    TestTrue(TEXT("Player must be marked inside house"), KaelHouse->bIsPlayerInside);
+    TestEqual(TEXT("House interior triggers Over-the-Shoulder Third-Person camera"),
+        Kael->DualCameraComponent->GetCurrentCameraMode(), EEdrathCameraMode::InteriorThirdPerson);
+
+    TestTrue(TEXT("Handwriting desk clue inspectable"), HandwritingClue->Inspect(Kael));
+    TestTrue(TEXT("Scratched portrait clue inspectable"), PortraitClue->Inspect(Kael));
+    TestTrue(TEXT("Both forensic clues must be registered as inspected"), KaelHouse->AreAllForensicCluesInspected());
+
+    Director->RefreshZoneState();
+    TestEqual(TEXT("House clue inspection advances to Zone 5"),
+        Director->GetCurrentZone(), EPreAlphaZoneState::Zone5_CryptPriestTwist);
+
+    // -------------------------------------------------------------
+    // ZONE 5: The Local Crypt & The 114-Year-Dead Priest
+    // -------------------------------------------------------------
+    Portcullis->ApplyTimelineState(ETimelineState::RejectedTimeline);
+    Director->RefreshZoneState();
+    TestTrue(TEXT("Portcullis timeline shift registered"), Director->HasCryptPortcullisShifted());
+
+    TestTrue(TEXT("Priest corpse inspected"), PriestCorpse->InspectCorpse(Kael));
+    TestEqual(TEXT("Priest death certificate confirms 114 years dead"), PriestCorpse->YearsDeceased, 114);
+
+    TestTrue(TEXT("Memory reconstruction shatters the 7-day loop"), PriestCorpse->ReconstructMemory(Kael));
+    TestTrue(TEXT("Priest corpse marks loop broken"), PriestCorpse->HasBrokenSettlementLoop());
+    TestTrue(TEXT("Narrative subsystem confirms Act 1 loop broken"), NarrativeSys->IsSettlementLoopBroken());
+
+    TestEqual(TEXT("Act 1 Pre-Alpha slice successfully completed"),
+        Director->GetCurrentZone(), EPreAlphaZoneState::PreAlphaCompleted);
+    TestTrue(TEXT("Level script actor marks slice complete"), LevelScript->IsSliceComplete());
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
