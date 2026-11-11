@@ -25,7 +25,7 @@ public:
     TObjectPtr<UStaticMeshComponent> RejectedTimelineMesh;
 
     UFUNCTION(BlueprintCallable, Category="Edrath|PossibilityShift")
-    void ApplyTimelineState(ETimelineState NewState);
+    virtual void ApplyTimelineState(ETimelineState NewState);
 
     UFUNCTION(BlueprintPure, Category="Edrath|PossibilityShift")
     ETimelineState GetCurrentActorTimelineState() const { return CurrentState; }
