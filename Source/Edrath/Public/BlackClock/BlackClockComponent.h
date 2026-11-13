@@ -29,6 +29,21 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|BlackClock|EchoCombat")
     bool TriggerEchoStrike(float SecondsAgo, EEdrathRegion CurrentRegion, FEchoActionFrame& OutEchoFrame);
 
+    /** Sub-frame linear/Hermite interpolation between recorded frames based on continuous target timestamp. */
+    UFUNCTION(BlueprintPure, Category="Edrath|BlackClock|EchoCombat")
+    bool InterpolateFrameAtTime(float TargetTimestamp, FEchoActionFrame& OutFrame) const;
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|BlackClock")
+    void RestoreStability(float Amount);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|BlackClock|EchoCombat")
+    int32 GetActionHistoryBufferSize() const { return ActionHistoryBuffer.Num(); }
+
+    const TArray<FEchoActionFrame>& GetActionHistoryBuffer() const { return ActionHistoryBuffer; }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|BlackClock|EchoCombat")
+    void ClearActionHistoryBuffer() { ActionHistoryBuffer.Empty(); }
+
     UFUNCTION(BlueprintPure, Category="Edrath|BlackClock")
     ETimelineState GetActiveTimelineState() const { return ActiveTimelineState; }
 
