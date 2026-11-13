@@ -1,6 +1,7 @@
 // Edrath: The World That Forgot Tomorrow
 // Shader: PossibilityDissolve.usf
 // Purpose: Temporal reality-shift dissolve for APossibilityShiftActor and ABeliefBuildingActor.
+// Enhanced for Phase 4: Synchronized with Zone 2 Collapsed Gorge Bridge timeline crossing.
 // Path: /Project/Shaders/PossibilityDissolve.usf
 
 #pragma once
