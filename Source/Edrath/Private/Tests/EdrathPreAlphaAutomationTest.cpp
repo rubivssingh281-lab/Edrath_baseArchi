@@ -2,6 +2,7 @@
 #include "BlackClock/BlackClockComponent.h"
 #include "BlackClock/PossibilityShiftActor.h"
 #include "Camera/EdrathDualCameraComponent.h"
+#include "Camera/EdrathInteriorTransitionVolume.h"
 #include "Character/KaelCharacter.h"
 #include "Core/EdrathGameplayTags.h"
 #include "Engine/GameInstance.h"
@@ -103,6 +104,8 @@ bool FEdrathPreAlphaVerticalSliceTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+
 
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -224,6 +227,8 @@ bool FEdrathAct1PreAlphaFiveZoneTest::RunTest(const FString&)
 }
 
 
+
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathHUDAndForensicUIVerificationTest,
     "Edrath.PreAlpha.HUDAndForensicUIVerification",
@@ -333,6 +338,8 @@ bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
 }
 
 
+
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathSixRegionsWorldActorsTest,
     "Edrath.PreAlpha.SixRegionsWorldActors",
@@ -410,6 +417,8 @@ bool FEdrathSixRegionsWorldActorsTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+
 
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -560,6 +569,8 @@ bool FEdrathQuestAndCompanionSystemsTest::RunTest(const FString&)
 }
 
 
+
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathHUDAndForensicUIVerificationTest,
     "Edrath.PreAlpha.HUDAndForensicUIVerification",
@@ -667,6 +678,8 @@ bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+
 
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -796,6 +809,8 @@ bool FEdrathFullUIAndHUDArchitectureVerificationTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathStage2ComprehensiveVerticalSlicePlaythroughTest,
@@ -975,4 +990,362 @@ bool FEdrathStage2ComprehensiveVerticalSlicePlaythroughTest::RunTest(const FStri
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathDualCameraAntiClippingAndRoofFadeTest,
+    "Edrath.Camera.DualPerspectiveTransitionAndRoofFadeVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathDualCameraAntiClippingAndRoofFadeTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+
+    AEdrathInteriorTransitionVolume* Volume = TestWorld->SpawnActor<AEdrathInteriorTransitionVolume>();
+    TestNotNull(TEXT("Interior volume must spawn"), Volume);
+
+    if (Kael && Volume)
+    {
+        TestEqual(TEXT("Initial camera mode must be ExteriorBirdsEye"),
+            Kael->DualCameraComponent->GetCurrentCameraMode(), EEdrathCameraMode::ExteriorBirdsEye);
+        TestFalse(TEXT("Initially not blending perspective"),
+            Kael->DualCameraComponent->IsBlendingPerspective());
+
+        // Trigger perspective switch with Volume
+        Kael->DualCameraComponent->SetCameraPerspective(EEdrathCameraMode::InteriorThirdPerson, Volume);
+        TestTrue(TEXT("Switching perspective must trigger blend state"),
+            Kael->DualCameraComponent->IsBlendingPerspective());
+        TestEqual(TEXT("Transition alpha starts at 0.0"),
+            Kael->DualCameraComponent->GetTransitionAlpha(), 0.0f);
+
+        // Advance transition tick
+        Kael->DualCameraComponent->TickComponent(0.35f, LEVELTICK_All, nullptr);
+        TestTrue(TEXT("Transition alpha advances with tick"),
+            Kael->DualCameraComponent->GetTransitionAlpha() > 0.0f);
+
+        // Complete transition tick
+        Kael->DualCameraComponent->TickComponent(0.40f, LEVELTICK_All, nullptr);
+        TestEqual(TEXT("Transition alpha reaches 1.0"),
+            Kael->DualCameraComponent->GetTransitionAlpha(), 1.0f);
+        TestFalse(TEXT("Blending perspective finishes at alpha 1.0"),
+            Kael->DualCameraComponent->IsBlendingPerspective());
+
+        // Test Roof Dither Opacity Fade
+        TestEqual(TEXT("Initial roof opacity is 1.0"), Volume->GetCurrentRoofOpacity(), 1.0f);
+        Volume->Tick(0.25f);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathEchoCombatSubFrameInterpolationTest,
+    "Edrath.PreAlpha.EchoCombatSubFrameInterpolationAndParryTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathEchoCombatSubFrameInterpolationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+
+    if (Kael && Kael->BlackClockComponent && Kael->EchoCombatComponent)
+    {
+        UBlackClockComponent* Clock = Kael->BlackClockComponent;
+        UEdrathEchoCombatComponent* Combat = Kael->EchoCombatComponent;
+
+        Clock->ClearActionHistoryBuffer();
+        TestEqual(TEXT("Buffer begins empty"), Clock->GetActionHistoryBufferSize(), 0);
+
+        // Record synthetic frames to verify sub-frame interpolation
+        Kael->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+        Kael->SetActorRotation(FRotator(0.0f, 0.0f, 0.0f));
+        Clock->RecordCombatFrame(FName(TEXT("Slash_Combo_01")), 30.0f);
+
+        Kael->SetActorLocation(FVector(100.0f, 200.0f, 0.0f));
+        Kael->SetActorRotation(FRotator(0.0f, 90.0f, 0.0f));
+        Clock->RecordCombatFrame(FName(TEXT("Slash_Combo_02")), 50.0f);
+
+        TestEqual(TEXT("Buffer contains 2 recorded frames"), Clock->GetActionHistoryBufferSize(), 2);
+
+        // Retrieve recorded timestamps
+        const TArray<FEchoActionFrame>& Buffer = Clock->GetActionHistoryBuffer();
+        const float T0 = Buffer[0].TimestampSeconds;
+        const float T1 = Buffer[1].TimestampSeconds;
+
+        // Query sub-frame midpoint
+        const float MidTime = (T0 + T1) * 0.5f;
+        FEchoActionFrame InterpolatedFrame;
+        const bool bInterpSuccess = Clock->InterpolateFrameAtTime(MidTime, InterpolatedFrame);
+        TestTrue(TEXT("InterpolateFrameAtTime succeeds"), bInterpSuccess);
+
+        // Verify interpolated attributes
+        TestNearlyEqual(TEXT("Interpolated X position must be 50.0"), InterpolatedFrame.WorldPosition.X, 50.0f, 1.0f);
+        TestNearlyEqual(TEXT("Interpolated Y position must be 100.0"), InterpolatedFrame.WorldPosition.Y, 100.0f, 1.0f);
+        TestNearlyEqual(TEXT("Interpolated BaseDamage must be 40.0"), InterpolatedFrame.BaseDamage, 40.0f, 0.5f);
+
+        // Test Parry Window and Stability Reward
+        const float InitialStability = Clock->GetClockStability();
+        Combat->ExecuteParry(0.25f);
+        TestTrue(TEXT("Combat component must be in Parry window"), Combat->IsInParryWindow());
+
+        // Drain 10 stability to test reward recovery
+        Clock->RestoreStability(-10.0f);
+        const float DrainedStability = Clock->GetClockStability();
+        TestTrue(TEXT("Stability drained"), DrainedStability < InitialStability);
+
+        // Resolve incoming hit during parry
+        const bool bHitDealtDamage = Combat->CheckAndResolveIncomingHit(25.0f, nullptr);
+        TestFalse(TEXT("Parried hit deals no damage"), bHitDealtDamage);
+        TestTrue(TEXT("Parry restored clock stability"), Clock->GetClockStability() > DrainedStability);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathForensicContradictionDeductionTest,
+    "Edrath.PreAlpha.ForensicContradictionAndSettlementBreakTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathForensicContradictionDeductionTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathNarrativeSubsystem* Narrative = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>();
+    TestNotNull(TEXT("Narrative subsystem must be valid"), Narrative);
+
+    UForensicContradictionWidget* Widget = NewObject<UForensicContradictionWidget>(TestWorld);
+    TestNotNull(TEXT("Forensic contradiction widget must be created"), Widget);
+
+    if (Narrative && Widget)
+    {
+        Widget->RegisterDefaultDeductionRules();
+        TestTrue(TEXT("Rules must contain at least 4 rules"), Widget->GetDeductionRules().Num() >= 4);
+
+        TestFalse(TEXT("Settlement loop initially not broken"), Narrative->IsSettlementLoopBroken());
+        TestEqual(TEXT("Resolved contradictions start at 0"), Widget->GetResolvedContradictionCount(), 0);
+
+        // Attempt resolving unmatched clues
+        Widget->SlotPrimaryClue(EdrathGameplayTags::QuestAct1Crypt);
+        Widget->SlotContradictoryClue(EdrathGameplayTags::QuestLastHonestKing);
+        TestTrue(TEXT("Both slots filled"), Widget->AreBothSlotsFilled());
+
+        FContradictionResolutionResult MismatchResult = Widget->AttemptResolveContradiction();
+        TestFalse(TEXT("Mismatch deduction must fail"), MismatchResult.bSuccess);
+        TestFalse(TEXT("Settlement loop remains intact"), Narrative->IsSettlementLoopBroken());
+
+        // Clear Slot B and slot matching clue
+        Widget->ClearSlotB();
+        TestFalse(TEXT("Slot B cleared"), Widget->AreBothSlotsFilled());
+        Widget->SlotContradictoryClue(EdrathGameplayTags::Twist1);
+        TestTrue(TEXT("Slot B refilled with matching clue"), Widget->AreBothSlotsFilled());
+
+        FContradictionResolutionResult SuccessResult = Widget->AttemptResolveContradiction();
+        TestTrue(TEXT("Matching contradiction deduction must succeed"), SuccessResult.bSuccess);
+        TestEqual(TEXT("Breakthrough tag matches Twist 1"), SuccessResult.BreakthroughTag, EdrathGameplayTags::Twist1);
+        TestTrue(TEXT("Breakthrough is registered"), Widget->HasBreakthroughBeenResolved(EdrathGameplayTags::Twist1));
+        TestEqual(TEXT("Resolved contradiction count incremented"), Widget->GetResolvedContradictionCount(), 1);
+
+        // Verify narrative side effect: Act 1 settlement loop broken
+        TestTrue(TEXT("Settlement loop is now broken via deduction"), Narrative->IsSettlementLoopBroken());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathAct1FiveZoneContinuityTest,
+    "Edrath.PreAlpha.Act1FiveZoneEndToEndContinuityTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathAct1FiveZoneContinuityTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    APossibilityShiftActor* GorgeBridge = TestWorld->SpawnActor<APossibilityShiftActor>();
+    ABeliefBuildingActor* Shrine = TestWorld->SpawnActor<ABeliefBuildingActor>();
+    AAct1PreAlphaSliceDirector* Director = TestWorld->SpawnActor<AAct1PreAlphaSliceDirector>();
+
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("GorgeBridge must spawn"), GorgeBridge);
+    TestNotNull(TEXT("Shrine must spawn"), Shrine);
+    TestNotNull(TEXT("Director must spawn"), Director);
+
+    if (Kael && GorgeBridge && Shrine && Director)
+    {
+        Director->BattlefieldWraithCount = 2;
+        Director->HandwritingEvidenceTag = EdrathGameplayTags::QuestAct1Forensics;
+        Director->ScratchedPortraitEvidenceTag = EdrathGameplayTags::Twist2;
+        Director->PriestMemoryAnchorTag = EdrathGameplayTags::QuestAct1Crypt;
+
+        Director->InitializeSlice(Kael, GorgeBridge, Shrine);
+
+        // Zone 1: Battlefield Awakening
+        TestEqual(TEXT("Initial zone is Zone 1"), Director->GetCurrentZone(), EPreAlphaZoneState::Zone1_BattlefieldAwakening);
+        Director->RegisterDyingSoldierDialogueTriggered();
+        TestTrue(TEXT("Dying soldier dialogue triggered"), Director->HasDyingSoldierDialogueTriggered());
+
+        Director->RegisterBattlefieldWraithDefeated();
+        Director->RegisterBattlefieldWraithDefeated();
+        TestTrue(TEXT("Zone 1 cleared"), Director->IsZone1Cleared());
+        TestEqual(TEXT("Advanced to Zone 2"), Director->GetCurrentZone(), EPreAlphaZoneState::Zone2_CollapsedGorgeBridge);
+
+        // Zone 2: Collapsed Gorge Bridge
+        TestTrue(TEXT("Zone 2 currently active"), Director->GetCurrentZone() == EPreAlphaZoneState::Zone2_CollapsedGorgeBridge);
+        GorgeBridge->ApplyTimelineState(ETimelineState::RejectedTimeline);
+        Director->RefreshZoneState();
+        TestTrue(TEXT("Zone 2 cleared"), Director->IsZone2Cleared());
+        TestEqual(TEXT("Advanced to Zone 3"), Director->GetCurrentZone(), EPreAlphaZoneState::Zone3_LoopingSettlementExterior);
+
+        // Zone 3: Looping Settlement Exterior
+        UEdrathNarrativeSubsystem* Narrative = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>();
+        TestNotNull(TEXT("Narrative subsystem exists"), Narrative);
+        if (Narrative)
+        {
+            for (int32 Day = 0; Day < 7; ++Day)
+            {
+                Director->AdvanceSettlementDay();
+            }
+            TestEqual(TEXT("Settlement loop wrapped to Day 1"), Narrative->GetCurrentSettlementLoopDay(), 1);
+            Narrative->SetCitizenBeliefWeight(Shrine->BuildingBeliefTag, 100.0f);
+        }
+        TestTrue(TEXT("Zone 3 cleared"), Director->IsZone3Cleared());
+        TestEqual(TEXT("Advanced to Zone 4"), Director->GetCurrentZone(), EPreAlphaZoneState::Zone4_KaelHouseForensics);
+
+        // Zone 4: Kael House Forensics
+        Kael->DualCameraComponent->SetCameraPerspective(EEdrathCameraMode::InteriorThirdPerson);
+
+        AForensicClueActor* Clue1 = TestWorld->SpawnActor<AForensicClueActor>();
+        Clue1->EvidenceTag = Director->HandwritingEvidenceTag;
+        Director->RegisterHouseForensicClue(Clue1);
+        Clue1->InspectClue(Kael);
+
+        AForensicClueActor* Clue2 = TestWorld->SpawnActor<AForensicClueActor>();
+        Clue2->EvidenceTag = Director->ScratchedPortraitEvidenceTag;
+        Director->RegisterHouseForensicClue(Clue2);
+        Clue2->InspectClue(Kael);
+
+        TestTrue(TEXT("Zone 4 cleared"), Director->IsZone4Cleared());
+        TestEqual(TEXT("Advanced to Zone 5"), Director->GetCurrentZone(), EPreAlphaZoneState::Zone5_CryptPriestTwist);
+
+        // Zone 5: Crypt Priest Twist
+        Director->RegisterCryptPortcullisShift();
+        TestTrue(TEXT("Portcullis shifted"), Director->HasCryptPortcullisShifted());
+
+        Director->RegisterPriestCorpseInspected();
+        TestTrue(TEXT("Priest corpse inspected"), Director->HasPriestCorpseBeenInspected());
+
+        const bool bCompletedSlice = Director->CompletePriestMemoryReconstruction();
+        TestTrue(TEXT("Priest memory reconstruction completed"), bCompletedSlice);
+        TestTrue(TEXT("Pre-Alpha slice fully completed"), Director->IsPreAlphaCompleted());
+        if (Narrative)
+        {
+            TestTrue(TEXT("Settlement loop permanently broken"), Narrative->IsSettlementLoopBroken());
+        }
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathHardwareVRAMBudgetGuardianTest,
+    "Edrath.Hardware.VRAMBudgetGuardianAndDynamicSentinelTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathHardwareVRAMBudgetGuardianTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathHardwareOptimizationSubsystem* HardwareOpt =
+        GameInstance->GetSubsystem<UEdrathHardwareOptimizationSubsystem>();
+    TestNotNull(TEXT("Hardware optimization subsystem must initialize"), HardwareOpt);
+
+    if (HardwareOpt)
+    {
+        const int32 CeilingMB = HardwareOpt->GetVRAMCeilingMB();
+        TestTrue(TEXT("VRAM ceiling must be at least 2048 MB"), CeilingMB >= 2048);
+
+        const FEdrathVRAMBudgetAllocation& Budget = HardwareOpt->GetVRAMBudget();
+        TestTrue(TEXT("Total allocated budget must not exceed VRAM ceiling"),
+            Budget.GetTotalAllocatedMB() <= CeilingMB);
+
+        // Test normal operation (throttle level 0)
+        const bool bNormalThrottled = HardwareOpt->CheckAndEnforceVRAMSentinel(CeilingMB * 0.50f);
+        TestFalse(TEXT("Under 80% usage must not trigger throttling"), bNormalThrottled);
+        TestEqual(TEXT("Throttle level is 0 under normal usage"), HardwareOpt->GetActiveVRAMThrottleLevel(), 0);
+
+        // Test Caution Threshold (80% - 90%)
+        const bool bCautionThrottled = HardwareOpt->CheckAndEnforceVRAMSentinel(CeilingMB * 0.84f);
+        TestFalse(TEXT("Caution state adjusts parameters without emergency flag"), bCautionThrottled);
+        TestEqual(TEXT("Throttle level is 1 under caution usage"), HardwareOpt->GetActiveVRAMThrottleLevel(), 1);
+
+        // Test Emergency Sentinel Threshold (>= 90%)
+        const bool bEmergencyThrottled = HardwareOpt->CheckAndEnforceVRAMSentinel(CeilingMB * 0.94f);
+        TestTrue(TEXT("Over 90% usage must trigger emergency sentinel"), bEmergencyThrottled);
+        TestEqual(TEXT("Throttle level is 2 under emergency usage"), HardwareOpt->GetActiveVRAMThrottleLevel(), 2);
+
+        // Recovery back to normal
+        HardwareOpt->CheckAndEnforceVRAMSentinel(CeilingMB * 0.40f);
+        TestEqual(TEXT("Throttle level recovers to 0 when memory drops"), HardwareOpt->GetActiveVRAMThrottleLevel(), 0);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
 
