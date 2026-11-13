@@ -12,6 +12,7 @@ class UEdrathNarrativeSubsystem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnContradictionResolvedEvent, const FContradictionResolutionResult&, Result);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnContradictionFailedEvent, FGameplayTag, ClueA, FGameplayTag, ClueB);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnContradictionBreakthroughVisualFX, FGameplayTag, BreakthroughTag, float, GlitchIntensity, float, PulseDuration);
 
 /**
  * UForensicContradictionWidget
@@ -50,6 +51,22 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|UI|Deduction")
     void ClearDeductionSlots();
 
+    /** Clears only slot A */
+    UFUNCTION(BlueprintCallable, Category="Edrath|UI|Deduction")
+    void ClearSlotA();
+
+    /** Clears only slot B */
+    UFUNCTION(BlueprintCallable, Category="Edrath|UI|Deduction")
+    void ClearSlotB();
+
+    /** Checks whether a specific clue tag is currently in either slot */
+    UFUNCTION(BlueprintPure, Category="Edrath|UI|Deduction")
+    bool IsClueSlotted(FGameplayTag ClueTag) const { return SlottedClueA == ClueTag || SlottedClueB == ClueTag; }
+
+    /** Retrieves all registered deduction hypothesis rules */
+    UFUNCTION(BlueprintPure, Category="Edrath|UI|Deduction")
+    const TArray<FContradictionDeductionRule>& GetDeductionRules() const { return DeductionRules; }
+
     /** Retrieves the number of successfully resolved contradictions */
     UFUNCTION(BlueprintPure, Category="Edrath|UI|Deduction")
     int32 GetResolvedContradictionCount() const { return ResolvedBreakthroughs.Num(); }
@@ -73,7 +90,15 @@ public:
     UPROPERTY(BlueprintAssignable, Category="Edrath|UI|Deduction")
     FOnContradictionFailedEvent OnContradictionFailed;
 
+    UPROPERTY(BlueprintAssignable, Category="Edrath|UI|Deduction")
+    FOnContradictionBreakthroughVisualFX OnBreakthroughVisualFX;
+
 protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|UI|Deduction|VisualFX")
+    float BreakthroughChromaticGlitchIntensity = 0.85f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|UI|Deduction|VisualFX")
+    float BreakthroughPulseDurationSeconds = 1.2f;
     UPROPERTY(BlueprintReadOnly, Category="Edrath|UI|Deduction")
     FGameplayTag SlottedClueA;
 
