@@ -1,6 +1,9 @@
 #include "BlackClock/EchoCombatComponent.h"
 #include "Character/KaelCharacter.h"
 #include "BlackClock/BlackClockComponent.h"
+#include "Engine/World.h"
+#include "Engine/HitResult.h"
+#include "CollisionQueryParams.h"
 
 UEdrathEchoCombatComponent::UEdrathEchoCombatComponent()
 {
@@ -112,6 +115,16 @@ bool UEdrathEchoCombatComponent::CheckAndResolveIncomingHit(float IncomingDamage
     if (IsInParryWindow())
     {
         SetCombatState(ECombatActionState::Idle, 0.0f);
+
+        // Award stability reward to owner's Black Clock if present
+        if (AActor* OwnerActor = GetOwner())
+        {
+            if (UBlackClockComponent* ClockComp = OwnerActor->FindComponentByClass<UBlackClockComponent>())
+            {
+                ClockComp->RestoreStability(ParryStabilityReward);
+            }
+        }
+
         if (OnSuccessfulParry.IsBound())
         {
             OnSuccessfulParry.Broadcast();
@@ -122,9 +135,55 @@ bool UEdrathEchoCombatComponent::CheckAndResolveIncomingHit(float IncomingDamage
     return true;
 }
 
+int32 UEdrathEchoCombatComponent::PerformGhostStrikePhysicsSweep(const FEchoActionFrame& EchoFrame, float SweepRadius, float ReachDistance)
+{
+    LastGhostHitCount = 0;
+    if (!GetWorld())
+    {
+        return 0;
+    }
+
+    const FVector Start = EchoFrame.WorldPosition;
+    const FVector End = Start + (EchoFrame.WorldRotation.Vector() * ReachDistance);
+    TArray<FHitResult> HitResults;
+    FCollisionShape SweepShape = FCollisionShape::MakeSphere(SweepRadius);
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(EchoGhostSweep), false, GetOwner());
+
+    const bool bHit = GetWorld()->SweepMultiByChannel(
+        HitResults,
+        Start,
+        End,
+        FQuat::Identity,
+        ECC_Pawn,
+        SweepShape,
+        Params
+    );
+
+    if (bHit)
+    {
+        const float DamageToDeal = EchoFrame.BaseDamage * 0.85f;
+        for (const FHitResult& Hit : HitResults)
+        {
+            AActor* HitActor = Hit.GetActor();
+            if (HitActor && HitActor != GetOwner())
+            {
+                LastGhostHitCount++;
+                if (OnEchoGhostSweepHit.IsBound())
+                {
+                    OnEchoGhostSweepHit.Broadcast(HitActor, DamageToDeal);
+                }
+            }
+        }
+    }
+
+    return LastGhostHitCount;
+}
+
 void UEdrathEchoCombatComponent::SpawnVisualGhostStrike(const FEchoActionFrame& EchoFrame)
 {
     LastGhostStrike = EchoFrame;
+    PerformGhostStrikePhysicsSweep(EchoFrame);
+
     if (OnVisualGhostStrikeRequested.IsBound())
     {
         OnVisualGhostStrikeRequested.Broadcast(LastGhostStrike);
