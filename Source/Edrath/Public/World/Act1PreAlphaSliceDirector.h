@@ -122,6 +122,27 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|PreAlpha")
     bool HasCryptPortcullisShifted() const { return bCryptPortcullisShifted; }
 
+    UFUNCTION(BlueprintPure, Category="Edrath|PreAlpha")
+    bool HasPriestCorpseBeenInspected() const { return bPriestCorpseInspected; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|PreAlpha")
+    bool HasPriestMemoryBeenReconstructed() const { return bPriestMemoryReconstructed; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|PreAlpha")
+    bool IsZone1Cleared() const { return bDyingSoldierDialogueTriggered && DefeatedBattlefieldWraithCount >= FMath::Max(0, BattlefieldWraithCount); }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|PreAlpha")
+    bool IsZone2Cleared() const { return static_cast<uint8>(CurrentZone) > static_cast<uint8>(EPreAlphaZoneState::Zone2_CollapsedGorgeBridge); }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|PreAlpha")
+    bool IsZone3Cleared() const { return static_cast<uint8>(CurrentZone) > static_cast<uint8>(EPreAlphaZoneState::Zone3_LoopingSettlementExterior); }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|PreAlpha")
+    bool IsZone4Cleared() const { return static_cast<uint8>(CurrentZone) > static_cast<uint8>(EPreAlphaZoneState::Zone4_KaelHouseForensics); }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|PreAlpha")
+    bool IsPreAlphaCompleted() const { return CurrentZone == EPreAlphaZoneState::PreAlphaCompleted; }
+
 protected:
     UFUNCTION()
     void HandleBeliefWeightChanged(FGameplayTag BuildingTag, float NewBeliefWeight);
