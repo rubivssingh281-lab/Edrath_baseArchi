@@ -32,25 +32,20 @@ To clean transient build packages and reclaim 20-50GB on 512GB laptop drives:
 # On Windows: .\Scripts\CleanBuildArtifacts.ps1
 ```
 
-To execute the 6-Phase Master Polish automated commit suite (24 discrete commits across all subsystems):
-```bash
-bash Scripts/commit_all_phases.sh
-```
-
 ---
 
-## 🏗️ 6-Phase Master Polish Architecture (24 Local Commits)
+## 🏗️ 6-Phase Master Polish Architecture
 
 The codebase features an end-to-end, deterministic 6-phase polish across all gameplay, graphics, memory, and narrative subsystems:
 
-| Phase | Subsystem & Technical Scope | Key C++ Classes & Shaders | 4-Commit Automation Script |
+| Phase | Subsystem & Technical Scope | Key C++ Classes & Shaders | Automated Verification Test |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | **Dual-Perspective Camera & Anti-Clipping** | `UEdrathDualCameraComponent`, `AEdrathInteriorTransitionVolume` | `Scripts/commit_phase1.sh` |
-| **Phase 2** | **Echo Combat & Sub-Frame Hermite Interpolation** | `UBlackClockComponent`, `UEdrathEchoCombatComponent` | `Scripts/commit_phase2.sh` |
-| **Phase 3** | **Forensic Evidence & Contradiction Deduction** | `UForensicContradictionWidget`, `MemoryEchoGhost.usf` | `Scripts/commit_phase3.sh` |
-| **Phase 4** | **Act 1 Five-Zone Playable Slice Continuity** | `AAct1PreAlphaSliceDirector`, `PossibilityDissolve.usf` | `Scripts/commit_phase4.sh` |
-| **Phase 5** | **8GB VRAM Budget Guardian & Sentinel** | `UEdrathHardwareOptimizationSubsystem`, `DefaultScalability.ini` | `Scripts/commit_phase5.sh` |
-| **Phase 6** | **Comprehensive Automation & Invariant Validation** | `EdrathPreAlphaAutomationTest.cpp`, `CHANGELOG.md` | `Scripts/commit_phase6.sh` |
+| **Phase 1** | **Dual-Perspective Camera & Anti-Clipping** | `UEdrathDualCameraComponent`, `AEdrathInteriorTransitionVolume` | `FEdrathDualCameraAntiClippingAndRoofFadeTest` |
+| **Phase 2** | **Echo Combat & Sub-Frame Hermite Interpolation** | `UBlackClockComponent`, `UEdrathEchoCombatComponent` | `FEdrathEchoCombatSubFrameInterpolationTest` |
+| **Phase 3** | **Forensic Evidence & Contradiction Deduction** | `UForensicContradictionWidget`, `MemoryEchoGhost.usf` | `FEdrathForensicContradictionDeductionTest` |
+| **Phase 4** | **Act 1 Five-Zone Playable Slice Continuity** | `AAct1PreAlphaSliceDirector`, `PossibilityDissolve.usf` | `FEdrathAct1FiveZoneContinuityTest` |
+| **Phase 5** | **8GB VRAM Budget Guardian & Sentinel** | `UEdrathHardwareOptimizationSubsystem`, `DefaultScalability.ini` | `FEdrathHardwareVRAMBudgetGuardianTest` |
+| **Phase 6** | **Comprehensive Automation & Invariant Validation** | `EdrathPreAlphaAutomationTest.cpp`, `CHANGELOG.md` | Full Automation Test Suite |
 
 ---
 

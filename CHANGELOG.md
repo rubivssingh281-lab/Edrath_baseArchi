@@ -39,7 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `FEdrathForensicContradictionDeductionTest`
     - `FEdrathAct1FiveZoneContinuityTest`
     - `FEdrathHardwareVRAMBudgetGuardianTest`
-  - Created automated 4-commit-per-phase execution scripts (`Scripts/commit_phase1.sh` through `Scripts/commit_phase6.sh`) and master runner `Scripts/commit_all_phases.sh`.
 
 ## [0.5.0] - 2026-11-11
 
