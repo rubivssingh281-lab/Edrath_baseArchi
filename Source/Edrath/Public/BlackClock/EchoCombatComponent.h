@@ -8,6 +8,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualGhostStrikeRequested, const FEchoActionFrame&, EchoFrame);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCombatActionStateChanged, ECombatActionState, NewState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSuccessfulParry);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnEchoGhostSweepHit, AActor*, HitActor, float, DamageDealt);
 
 UCLASS(ClassGroup=(EdrathBlackClock), meta=(BlueprintSpawnableComponent))
 class EDRATH_API UEdrathEchoCombatComponent : public UActorComponent
@@ -33,6 +34,13 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|BlackClock|EchoCombat")
     void SpawnVisualGhostStrike(const FEchoActionFrame& EchoFrame);
 
+    /** Performs multi-hit sphere sweep trace for the temporal ghost strike, dealing echo damage */
+    UFUNCTION(BlueprintCallable, Category="Edrath|BlackClock|EchoCombat")
+    int32 PerformGhostStrikePhysicsSweep(const FEchoActionFrame& EchoFrame, float SweepRadius = 90.0f, float ReachDistance = 140.0f);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|BlackClock|EchoCombat")
+    int32 GetLastGhostHitCount() const { return LastGhostHitCount; }
+
     UFUNCTION(BlueprintPure, Category="Edrath|Combat")
     ECombatActionState GetCurrentCombatActionState() const { return CurrentState; }
 
@@ -54,6 +62,9 @@ public:
     UPROPERTY(BlueprintAssignable, Category="Edrath|Combat")
     FOnSuccessfulParry OnSuccessfulParry;
 
+    UPROPERTY(BlueprintAssignable, Category="Edrath|BlackClock|EchoCombat")
+    FOnEchoGhostSweepHit OnEchoGhostSweepHit;
+
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Combat")
     float DodgeStaminaCost = 15.0f;
@@ -68,6 +79,7 @@ private:
     ECombatActionState CurrentState = ECombatActionState::Idle;
     float StateTimeRemaining = 0.0f;
     FEchoActionFrame LastGhostStrike;
+    int32 LastGhostHitCount = 0;
 
     void SetCombatState(ECombatActionState NewState, float Duration);
 };
