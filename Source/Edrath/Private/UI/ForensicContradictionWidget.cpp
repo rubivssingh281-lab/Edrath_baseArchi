@@ -149,6 +149,11 @@ FContradictionResolutionResult UForensicContradictionWidget::AttemptResolveContr
                 }
             }
 
+            if (OnBreakthroughVisualFX.IsBound())
+            {
+                OnBreakthroughVisualFX.Broadcast(Rule.BreakthroughTag, BreakthroughChromaticGlitchIntensity, BreakthroughPulseDurationSeconds);
+            }
+
             OnContradictionResolved.Broadcast(Result);
             return Result;
         }
@@ -185,6 +190,24 @@ void UForensicContradictionWidget::ClearDeductionSlots()
     if (ResolutionResultLabel)
     {
         ResolutionResultLabel->SetText(FText::GetEmpty());
+    }
+}
+
+void UForensicContradictionWidget::ClearSlotA()
+{
+    SlottedClueA = FGameplayTag::EmptyTag;
+    if (SlotALabel)
+    {
+        SlotALabel->SetText(FText::FromString(TEXT("[Select Primary Clue]")));
+    }
+}
+
+void UForensicContradictionWidget::ClearSlotB()
+{
+    SlottedClueB = FGameplayTag::EmptyTag;
+    if (SlotBLabel)
+    {
+        SlotBLabel->SetText(FText::FromString(TEXT("[Select Conflicting Clue]")));
     }
 }
 
