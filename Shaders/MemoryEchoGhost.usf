@@ -1,6 +1,7 @@
 // Edrath: The World That Forgot Tomorrow
 // Shader: MemoryEchoGhost.usf
 // Purpose: Holographic, chromatic aberration Fresnel ghost shader for Echo Combat clones and Memory Anchors.
+// Enhanced for Phase 3: Supports dynamic chromatic glitch intensity spikes on Forensic Contradiction Breakthroughs.
 // Path: /Project/Shaders/MemoryEchoGhost.usf
 
 #pragma once
