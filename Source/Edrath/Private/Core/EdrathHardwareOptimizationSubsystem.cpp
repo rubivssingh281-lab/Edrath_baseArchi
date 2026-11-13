@@ -266,3 +266,65 @@ void UEdrathHardwareOptimizationSubsystem::OptimizeTimelineMemoryFootprint(ETime
                            OptimizedCameraMode == EEdrathCameraMode::InteriorThirdPerson ? 0.8f : 1.2f);
     }
 }
+
+bool UEdrathHardwareOptimizationSubsystem::CheckAndEnforceVRAMSentinel(float SimulatedUsedVRAMMB)
+{
+    float CurrentUsageMB = 0.0f;
+    if (SimulatedUsedVRAMMB >= 0.0f)
+    {
+        CurrentUsageMB = SimulatedUsedVRAMMB;
+    }
+    else
+    {
+        FTextureMemoryStats TextureMemStats;
+        RHIGetTextureMemoryStats(TextureMemStats);
+        if (TextureMemStats.DedicatedVideoMemory > 0)
+        {
+            CurrentUsageMB = static_cast<float>(TextureMemStats.AllocatedMemory / (1024 * 1024));
+        }
+        else
+        {
+            CurrentUsageMB = static_cast<float>(VRAMBudget.GetTotalAllocatedMB());
+        }
+    }
+
+    const float CeilingMB = static_cast<float>(VRAMCeilingMB);
+    const float EmergencyThresholdMB = CeilingMB * 0.90f;
+    const float CautionThresholdMB = CeilingMB * 0.80f;
+
+    if (CurrentUsageMB >= EmergencyThresholdMB)
+    {
+        // Tier 2: Emergency Throttling to prevent driver crash or paging stall
+        ActiveVRAMThrottleLevel = 2;
+        const int32 ThrottledTexturePool = FMath::Max(static_cast<int32>(VRAMBudget.TextureStreamingMB * 0.70f), 1024);
+        const int32 ThrottledNanitePool = FMath::Max(static_cast<int32>(VRAMBudget.NaniteStreamingMB * 0.75f), 512);
+
+        SetConsoleVariable(TEXT("r.Streaming.PoolSize"), ThrottledTexturePool);
+        SetConsoleVariable(TEXT("r.Nanite.Streaming.PoolSize"), ThrottledNanitePool);
+        SetConsoleVariable(TEXT("r.Nanite.MaxPixelsPerEdge"), 2.0f);
+        SetConsoleVariable(TEXT("r.Shadow.Virtual.MaxPhysicalPages"), 1024);
+
+        UE_LOG(LogTemp, Warning,
+               TEXT("Edrath VRAM Sentinel EMERGENCY [Usage: %.1f MB / Ceiling: %.1f MB]! Throttling pools: Tex=%d, Nanite=%d"),
+               CurrentUsageMB, CeilingMB, ThrottledTexturePool, ThrottledNanitePool);
+        return true;
+    }
+    else if (CurrentUsageMB >= CautionThresholdMB)
+    {
+        // Tier 1: Caution Throttling
+        ActiveVRAMThrottleLevel = 1;
+        const int32 CautiousTexturePool = FMath::Max(static_cast<int32>(VRAMBudget.TextureStreamingMB * 0.85f), 1536);
+        SetConsoleVariable(TEXT("r.Streaming.PoolSize"), CautiousTexturePool);
+        SetConsoleVariable(TEXT("r.Nanite.MaxPixelsPerEdge"), 1.4f);
+
+        UE_LOG(LogTemp, Display,
+               TEXT("Edrath VRAM Sentinel CAUTION [Usage: %.1f MB / Ceiling: %.1f MB]! Adjusting pools."),
+               CurrentUsageMB, CeilingMB);
+        return false;
+    }
+
+    // Normal: VRAM usage within safe limits
+    ActiveVRAMThrottleLevel = 0;
+    ApplyVRAMBudget();
+    return false;
+}

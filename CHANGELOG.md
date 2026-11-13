@@ -12,6 +12,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sentry native C++ crash reporter integration in `Plugins/Sentry`.
 - Act 2 Veyl royal court memory reconstruction investigation.
 
+## [0.6.0] - 2026-11-13
+
+### Added
+- **Phase 1: Dual-Perspective Camera & Transition Polish**:
+  - Implemented dynamic collision sweep probe (`ProbeSphereRadius = 18.0f`) on `ECC_Camera` inside `UEdrathDualCameraComponent` to eliminate clipping into ceilings and door frames.
+  - Implemented smooth doorway threshold alignment via spherical quaternion interpolation (`FQuat::Slerp`) and cubic ease-in-out alpha blending.
+  - Implemented smooth dithered opacity fade (`RoofFadeDuration = 0.45f`, `RoofDitherOpacity`) in `AEdrathInteriorTransitionVolume`, replacing binary mesh popping.
+- **Phase 2: Echo Combat & Timeline Sub-Frame Interpolation**:
+  - Implemented continuous sub-frame linear (`FMath::Lerp`) and orientation (`FQuat::Slerp`) Hermite interpolation in `UBlackClockComponent::InterpolateFrameAtTime` across the 120-frame combat history buffer.
+  - Implemented multi-hit sphere sweep physics collision detection (`PerformGhostStrikePhysicsSweep`) dealing echo temporal damage in `UEdrathEchoCombatComponent`.
+  - Added parry window stability reward callback restoring Black Clock temporal energy upon successful defensive deflects.
+- **Phase 3: Forensic Evidence & Contradiction Deduction Engine**:
+  - Implemented dynamic visual chromatic aberration dispatch (`OnBreakthroughVisualFX`) and clue slot management (`ClearSlotA`, `ClearSlotB`) in `UForensicContradictionWidget`.
+  - Enhanced `Shaders/MemoryEchoGhost.usf` with dynamic chromatic aberration glitch spikes for narrative breakthrough moments.
+- **Phase 4: Pre-Alpha Act 1 Five-Zone Continuity Polish**:
+  - Implemented discrete zone completion query predicates (`IsZone1Cleared` through `IsZone5Cleared`, `IsPreAlphaCompleted`) in `AAct1PreAlphaSliceDirector`.
+  - Synchronized Zone 2 Collapsed Gorge Bridge reality swap with `Shaders/PossibilityDissolve.usf`.
+- **Phase 5: 8GB VRAM Guardian & Rendering Polish**:
+  - Implemented multi-tiered dynamic VRAM sentinel in `UEdrathHardwareOptimizationSubsystem`: Level 1 Caution at 80% and Level 2 Emergency Throttling at 90% (7.2 GB ceiling).
+  - Throttles texture streaming pool (`r.Streaming.PoolSize`), Nanite pool, and VSM physical pages to protect the RTX 5070 8GB laptop hardware envelope.
+- **Phase 6: Comprehensive Automation & Invariant Validation**:
+  - Added full automation test suites in `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp`:
+    - `FEdrathDualCameraAntiClippingAndRoofFadeTest`
+    - `FEdrathEchoCombatSubFrameInterpolationTest`
+    - `FEdrathForensicContradictionDeductionTest`
+    - `FEdrathAct1FiveZoneContinuityTest`
+    - `FEdrathHardwareVRAMBudgetGuardianTest`
+  - Created automated 4-commit-per-phase execution scripts (`Scripts/commit_phase1.sh` through `Scripts/commit_phase6.sh`) and master runner `Scripts/commit_all_phases.sh`.
+
 ## [0.5.0] - 2026-11-11
 
 ### Added

@@ -118,6 +118,18 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|Performance")
     int32 GetVRAMCeilingMB() const { return VRAMCeilingMB; }
 
+    /** Checks current VRAM consumption against the 90% safety threshold and dynamically throttles if exceeded. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Performance|VRAM")
+    bool CheckAndEnforceVRAMSentinel(float SimulatedUsedVRAMMB = -1.0f);
+
+    /** Current dynamic VRAM sentinel throttling level: 0 = Normal, 1 = Caution, 2 = Emergency Throttling */
+    UFUNCTION(BlueprintPure, Category="Edrath|Performance|VRAM")
+    int32 GetActiveVRAMThrottleLevel() const { return ActiveVRAMThrottleLevel; }
+
+    /** Gets the 90% critical threshold in MB */
+    UFUNCTION(BlueprintPure, Category="Edrath|Performance|VRAM")
+    float GetVRAMSafetyThresholdMB() const { return static_cast<float>(VRAMCeilingMB) * 0.90f; }
+
 private:
     /** Detect GPU, CPU, and RAM via platform APIs and RHI. */
     void DetectHardware();
@@ -142,4 +154,5 @@ private:
 
     EEdrathCameraMode OptimizedCameraMode = EEdrathCameraMode::ExteriorBirdsEye;
     ETimelineState OptimizedTimelineState = ETimelineState::PresentTimeline;
+    int32 ActiveVRAMThrottleLevel = 0;
 };
