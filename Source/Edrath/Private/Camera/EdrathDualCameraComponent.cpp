@@ -29,6 +29,11 @@ void UEdrathDualCameraComponent::InitializeCameraRig(USpringArmComponent* InSpri
     SpringArmComp->SocketOffset = ExteriorSocketOffset;
     SpringArmComp->bUsePawnControlRotation = false;
     SpringArmComp->bDoCollisionTest = false;
+    SpringArmComp->bEnableCameraLag = bEnableCameraLag;
+    SpringArmComp->CameraLagSpeed = CameraLagSpeed;
+    SpringArmComp->bEnableCameraRotationLag = bEnableCameraRotationLag;
+    SpringArmComp->CameraRotationLagSpeed = CameraRotationLagSpeed;
+    SpringArmComp->CameraLagMaxDistance = CameraLagMaxDistance;
     SpringArmComp->SetRelativeRotation(FRotator(ExteriorPitchDegrees, ExteriorYawDegrees, 0.0f));
     CameraComp->SetFieldOfView(ExteriorFOV);
 
@@ -152,6 +157,80 @@ void UEdrathDualCameraComponent::RotateExteriorYaw(float YawDeltaDegrees)
     }
 }
 
+void UEdrathDualCameraComponent::SnapExteriorYaw(float AngleStepDegrees)
+{
+    if (CurrentMode == EEdrathCameraMode::ExteriorBirdsEye && AngleStepDegrees > 0.1f)
+    {
+        const float Snapped = FMath::GridSnap(ExteriorYawDegrees, AngleStepDegrees);
+        ExteriorYawDegrees = FMath::Fmod(Snapped, 360.0f);
+        if (ExteriorYawDegrees < 0.0f)
+        {
+            ExteriorYawDegrees += 360.0f;
+        }
+    }
+}
+
+void UEdrathDualCameraComponent::PlayCameraImpulse(float Magnitude, FVector Direction)
+{
+    if (FMath::IsNearlyZero(Magnitude))
+    {
+        return;
+    }
+    const FVector NormDir = Direction.IsNearlyZero() ? FVector(0.0f, 0.0f, -1.0f) : Direction.GetSafeNormal();
+    CurrentCameraImpulseOffset += NormDir * Magnitude;
+}
+
+void UEdrathDualCameraComponent::UpdateCameraImpulse(float DeltaTime)
+{
+    if (!CurrentCameraImpulseOffset.IsNearlyZero(0.1f))
+    {
+        CurrentCameraImpulseOffset = FMath::VInterpTo(CurrentCameraImpulseOffset, FVector::ZeroVector, DeltaTime, 14.0f);
+    }
+    else
+    {
+        CurrentCameraImpulseOffset = FVector::ZeroVector;
+    }
+}
+
+void UEdrathDualCameraComponent::UpdateTerrainSlopeAdaptation(float DeltaTime)
+{
+    if (!bEnableTerrainSlopeAdaptation || !OwnerCharacter || !GetWorld() || CurrentMode != EEdrathCameraMode::ExteriorBirdsEye)
+    {
+        CurrentTerrainPitchDelta = FMath::FInterpTo(CurrentTerrainPitchDelta, 0.0f, DeltaTime, TerrainPitchInterpSpeed);
+        return;
+    }
+
+    const FVector CharLoc = OwnerCharacter->GetActorLocation();
+    const FVector Forward = OwnerCharacter->GetActorForwardVector();
+
+    const FVector TraceFrontStart = CharLoc + (Forward * TerrainTraceForwardDistance) + FVector(0.0f, 0.0f, 150.0f);
+    const FVector TraceFrontEnd = TraceFrontStart - FVector(0.0f, 0.0f, TerrainTraceDownDistance + 150.0f);
+
+    const FVector TraceBackStart = CharLoc - (Forward * (TerrainTraceForwardDistance * 0.5f)) + FVector(0.0f, 0.0f, 150.0f);
+    const FVector TraceBackEnd = TraceBackStart - FVector(0.0f, 0.0f, TerrainTraceDownDistance + 150.0f);
+
+    FCollisionQueryParams Params(TEXT("EdrathTerrainCameraSlope"), false, OwnerCharacter);
+    FHitResult HitFront, HitBack;
+
+    const bool bHitFront = GetWorld()->LineTraceSingleByChannel(HitFront, TraceFrontStart, TraceFrontEnd, ECC_Visibility, Params);
+    const bool bHitBack = GetWorld()->LineTraceSingleByChannel(HitBack, TraceBackStart, TraceBackEnd, ECC_Visibility, Params);
+
+    float TargetPitchDelta = 0.0f;
+    if (bHitFront && bHitBack)
+    {
+        const float HeightDelta = HitFront.ImpactPoint.Z - HitBack.ImpactPoint.Z;
+        const float DistanceXY = FVector::Dist2D(HitFront.ImpactPoint, HitBack.ImpactPoint);
+        if (DistanceXY > 10.0f)
+        {
+            const float SlopeAngleRadians = FMath::Atan2(HeightDelta, DistanceXY);
+            const float SlopeAngleDegrees = FMath::RadiansToDegrees(SlopeAngleRadians);
+            TargetPitchDelta = FMath::Clamp(SlopeAngleDegrees * TerrainPitchCompensationScale, -MaxTerrainPitchDeltaDegrees, MaxTerrainPitchDeltaDegrees);
+        }
+    }
+
+    CurrentTerrainPitchDelta = FMath::FInterpTo(CurrentTerrainPitchDelta, TargetPitchDelta, DeltaTime, TerrainPitchInterpSpeed);
+}
+
 void UEdrathDualCameraComponent::UpdateDoorwayQuaternionSlerp(float DeltaTime)
 {
     if (!bAligningDoorwayRotation || !OwnerCharacter)
@@ -249,14 +328,25 @@ void UEdrathDualCameraComponent::TickComponent(float DeltaTime, ELevelTick TickT
         CameraComp->SetFieldOfView(FMath::FInterpTo(CameraComp->FieldOfView, TargetFOV, DeltaTime, BlendInterpSpeed));
     }
 
+    // Update terrain slope adaptation and camera impulse damping
+    UpdateTerrainSlopeAdaptation(DeltaTime);
+    UpdateCameraImpulse(DeltaTime);
+
     // Doorway slerp alignment in interior mode
     UpdateDoorwayQuaternionSlerp(DeltaTime);
 
-    // Apply exterior fixed rotation
+    // Apply exterior fixed rotation with terrain slope pitch adaptation
     if (CurrentMode == EEdrathCameraMode::ExteriorBirdsEye && !bIsBlendingPerspective)
     {
-        const FRotator DesiredRotation(ExteriorPitchDegrees, ExteriorYawDegrees, 0.0f);
+        const float AdaptedPitch = ExteriorPitchDegrees + CurrentTerrainPitchDelta;
+        const FRotator DesiredRotation(AdaptedPitch, ExteriorYawDegrees, 0.0f);
         SpringArmComp->SetRelativeRotation(FMath::RInterpTo(SpringArmComp->GetRelativeRotation(), DesiredRotation, DeltaTime, BlendInterpSpeed));
+    }
+
+    // Apply dynamic camera impulse offset
+    if (!CurrentCameraImpulseOffset.IsNearlyZero())
+    {
+        SpringArmComp->SocketOffset += CurrentCameraImpulseOffset;
     }
 
     // Anti-clipping sphere probe when in third person or transitioning

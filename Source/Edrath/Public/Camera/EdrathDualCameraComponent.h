@@ -43,6 +43,14 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|Camera")
     void RotateExteriorYaw(float YawDeltaDegrees);
 
+    /** Snaps the Exterior Bird's-Eye camera yaw to the nearest quantized angle step (default 45 degrees). */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Camera")
+    void SnapExteriorYaw(float AngleStepDegrees = 45.0f);
+
+    /** Triggers a momentary camera impulse/shake offset (e.g. for heavy impacts or landfalls). */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Camera")
+    void PlayCameraImpulse(float Magnitude, FVector Direction);
+
     /** Returns active perspective mode. */
     UFUNCTION(BlueprintPure, Category="Edrath|Camera")
     EEdrathCameraMode GetCurrentCameraMode() const { return CurrentMode; }
@@ -54,6 +62,22 @@ public:
     /** Returns transition progress in range [0.0f, 1.0f]. */
     UFUNCTION(BlueprintPure, Category="Edrath|Camera")
     float GetTransitionAlpha() const { return TransitionAlpha; }
+
+    /** Returns current terrain slope pitch adjustment in degrees. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Camera|Terrain")
+    float GetTerrainPitchDelta() const { return CurrentTerrainPitchDelta; }
+
+    /** Returns whether terrain slope adaptation is enabled. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Camera|Terrain")
+    bool IsTerrainSlopeAdaptationEnabled() const { return bEnableTerrainSlopeAdaptation; }
+
+    /** Sets whether terrain slope adaptation is active. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Camera|Terrain")
+    void SetTerrainSlopeAdaptationEnabled(bool bEnabled) { bEnableTerrainSlopeAdaptation = bEnabled; }
+
+    /** Returns whether camera lag is active on the spring arm. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Camera|Motion")
+    bool IsCameraLagEnabled() const { return bEnableCameraLag; }
 
     UPROPERTY(BlueprintAssignable, Category="Edrath|Camera")
     FOnCameraPerspectiveChanged OnCameraPerspectiveChanged;
@@ -110,9 +134,45 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Transition")
     bool bEnableAntiClippingProbe = true;
 
+    // --- Terrain Adaptation & Camera Motion Smoothing ---
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Motion")
+    bool bEnableCameraLag = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Motion")
+    float CameraLagSpeed = 10.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Motion")
+    bool bEnableCameraRotationLag = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Motion")
+    float CameraRotationLagSpeed = 12.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Motion")
+    float CameraLagMaxDistance = 180.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Terrain")
+    bool bEnableTerrainSlopeAdaptation = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Terrain")
+    float TerrainTraceForwardDistance = 220.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Terrain")
+    float TerrainTraceDownDistance = 350.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Terrain")
+    float TerrainPitchCompensationScale = 0.35f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Terrain")
+    float MaxTerrainPitchDeltaDegrees = 12.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Camera|Terrain")
+    float TerrainPitchInterpSpeed = 4.0f;
+
 private:
     void PerformCameraAntiClippingSweep(float DesiredArmLength);
     void UpdateDoorwayQuaternionSlerp(float DeltaTime);
+    void UpdateTerrainSlopeAdaptation(float DeltaTime);
+    void UpdateCameraImpulse(float DeltaTime);
 
     UPROPERTY()
     TObjectPtr<USpringArmComponent> SpringArmComp;
@@ -140,4 +200,7 @@ private:
 
     FRotator TargetDoorwayRotation = FRotator::ZeroRotator;
     bool bAligningDoorwayRotation = false;
+
+    float CurrentTerrainPitchDelta = 0.0f;
+    FVector CurrentCameraImpulseOffset = FVector::ZeroVector;
 };
