@@ -22,6 +22,7 @@
 #include "Core/EdrathScalabilitySubsystem.h"
 #include "Core/EdrathHardwareOptimizationSubsystem.h"
 #include "Core/EdrathSaveSubsystem.h"
+#include "Core/EdrathTelemetrySubsystem.h"
 #include "BlackClock/EchoCombatComponent.h"
 #include "UI/BlackClockWidget.h"
 #include "UI/ForensicLedgerWidget.h"
@@ -41,6 +42,7 @@
 #include "World/KaelHouseInteriorActor.h"
 #include "World/PriestCorpseActor.h"
 #include "World/Act1BattlefieldLevelScriptActor.h"
+#include "World/Act2VeylCourtDirector.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -1478,6 +1480,136 @@ bool FEdrathModularRigAndTerrainIKTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathAct2VeylCourtInvestigationTest,
+    "Edrath.Act2.VeylCourtInvestigationAndBeliefDissolveTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathAct2VeylCourtInvestigationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    ABeliefBuildingActor* Cathedral = TestWorld->SpawnActor<ABeliefBuildingActor>();
+    AAct2VeylCourtDirector* Director = TestWorld->SpawnActor<AAct2VeylCourtDirector>();
+
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("Cathedral must spawn"), Cathedral);
+    TestNotNull(TEXT("Director must spawn"), Director);
+
+    if (Kael && Cathedral && Director)
+    {
+        Cathedral->BuildingBeliefTag = EdrathGameplayTags::RegionVeyl;
+        Cathedral->ExistenceBeliefThreshold = 0.5f;
+
+        // 1. Validate Belief Building Dissolve Logic
+        TestTrue(TEXT("Cathedral is initially manifested"), Cathedral->IsBuildingManifested());
+        TestTrue(TEXT("Initial dissolve alpha is 0.0"), FMath::IsNearlyZero(Cathedral->GetCurrentDissolveAlpha(), 0.01f));
+
+        // Drop belief weight below threshold to trigger dissolve
+        Cathedral->EvaluateBeliefExistence(Cathedral->BuildingBeliefTag, 0.2f);
+        TestFalse(TEXT("Dropping belief marks building unmanifested"), Cathedral->IsBuildingManifested());
+        Cathedral->Tick(0.20f);
+        TestTrue(TEXT("Dissolve alpha increases on tick"), Cathedral->GetCurrentDissolveAlpha() > 0.0f);
+
+        // 2. Validate Act 2 Court Director Progression
+        Director->InitializeAct2(Kael, Cathedral);
+        TestEqual(TEXT("Initial Act 2 state is QueenSerathAccusation"),
+            Director->GetAct2State(), EAct2VeylState::QueenSerathAccusation);
+
+        // Accept Queen Serath's bargain
+        TestTrue(TEXT("Bargain can be accepted"), Director->AcceptQueenBargain());
+        TestEqual(TEXT("State advances to InvestigationOfThreeMurders"),
+            Director->GetAct2State(), EAct2VeylState::InvestigationOfThreeMurders);
+
+        // Inspect the 3 impossible murder scenes
+        TestTrue(TEXT("Beggar murder inspection succeeds"), Director->InspectMurderScene(EVeylMurderVictim::Beggar));
+        TestFalse(TEXT("Cannot complete murders with 1 inspected"), Director->AreAllMurdersInvestigated());
+
+        TestTrue(TEXT("General murder inspection succeeds"), Director->InspectMurderScene(EVeylMurderVictim::General));
+        TestFalse(TEXT("Cannot complete murders with 2 inspected"), Director->AreAllMurdersInvestigated());
+
+        TestTrue(TEXT("Unborn child murder inspection succeeds"), Director->InspectMurderScene(EVeylMurderVictim::UnbornChild));
+        TestTrue(TEXT("All 3 murders are now investigated"), Director->AreAllMurdersInvestigated());
+        TestEqual(TEXT("State advances to CourtConspiracyConfrontation"),
+            Director->GetAct2State(), EAct2VeylState::CourtConspiracyConfrontation);
+
+        // Reveal the Prince truth
+        TestTrue(TEXT("Prince truth revelation succeeds"), Director->RevealPrinceTruth());
+        TestTrue(TEXT("Act 2 marked completed"), Director->IsAct2Completed());
+        TestEqual(TEXT("Final state is Act2Completed"),
+            Director->GetAct2State(), EAct2VeylState::Act2Completed);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathTelemetryAndCrashReportingTest,
+    "Edrath.Core.TelemetryAndCrashReportingVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathTelemetryAndCrashReportingTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathTelemetrySubsystem* Telemetry = GameInstance->GetSubsystem<UEdrathTelemetrySubsystem>();
+    TestNotNull(TEXT("Telemetry subsystem must initialize cleanly"), Telemetry);
+
+    if (Telemetry)
+    {
+        // Verify session ID generation
+        TestTrue(TEXT("Session GUID must be valid"), Telemetry->GetSessionId().IsValid());
+
+        // Verify breadcrumb recording
+        const int32 InitialBreadcrumbCount = Telemetry->GetBreadcrumbCount();
+        TestTrue(TEXT("Lifecycle initialization records initial breadcrumb"), InitialBreadcrumbCount >= 1);
+        Telemetry->RecordBreadcrumb(TEXT("Combat"), TEXT("Echo strike triggered by player"));
+        TestEqual(TEXT("Breadcrumb count increments"), Telemetry->GetBreadcrumbCount(), InitialBreadcrumbCount + 1);
+
+        // Queue telemetry events
+        Telemetry->ClearQueue();
+        TestEqual(TEXT("Queue begins empty after clear"), Telemetry->GetQueuedEventCount(), 0);
+
+        Telemetry->RecordNarrativeChoice(EdrathGameplayTags::Act2, TEXT("BargainAccepted"));
+        Telemetry->RecordMemoryMutation(FGuid::NewGuid(), EdrathGameplayTags::Twist2, 2);
+        Telemetry->RecordClockInstabilityEvent(EEdrathRegion::Veyl, 15.0f, FVector(100.0f, 200.0f, 300.0f));
+        Telemetry->RecordEndingSelection(EEdrathEndingType::UnwrittenWorld);
+
+        TestEqual(TEXT("Queue contains 4 distinct events"), Telemetry->GetQueuedEventCount(), 4);
+
+        // Flush and serialize payload
+        const FString JsonPayload = Telemetry->FlushAndSerializeTelemetryBatch();
+        TestTrue(TEXT("Serialized payload contains session_id key"), JsonPayload.Contains(TEXT("session_id")));
+        TestTrue(TEXT("Serialized payload contains events array"), JsonPayload.Contains(TEXT("events")));
+        TestEqual(TEXT("Queue is empty following batch flush"), Telemetry->GetQueuedEventCount(), 0);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
 
 
 

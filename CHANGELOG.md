@@ -9,8 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
-- Sentry native C++ crash reporter integration in `Plugins/Sentry`.
-- Act 2 Veyl royal court memory reconstruction investigation.
+- Act 3 Hollowgreen physical memory realm level instances.
+
+## [0.8.0] - 2026-11-15
+
+### Added
+- **Act 2 Kingdom of Veyl Royal Court & Belief Building Dissolve**:
+  - Enhanced `ABeliefBuildingActor` (`Source/Edrath/Public/World/BeliefBuildingActor.h`, `Source/Edrath/Private/World/BeliefBuildingActor.cpp`) with continuous dynamic material dissolve parameter modulation (`DissolveAlpha`, `EdgeWidth`, `EdgeColor`) and collision threshold fading driven by collective citizen belief weight.
+  - Implemented `AAct2VeylCourtDirector` (`Source/Edrath/Public/World/Act2VeylCourtDirector.h`, `Source/Edrath/Private/World/Act2VeylCourtDirector.cpp`) orchestrating Act II (*The Kingdom of Borrowed Faces*): Queen Serath royal court bargain, the three identical-face murder investigations (`Beggar`, `General`, `UnbornChild`), and Prince Aemon's erased memory truth revelation.
+  - Added `FEdrathAct2VeylCourtInvestigationTest` in `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp`.
+- **Asynchronous Telemetry & Sentry Crash Diagnostics Architecture**:
+  - Implemented `UEdrathTelemetrySubsystem` (`Source/Edrath/Public/Core/EdrathTelemetrySubsystem.h`, `Source/Edrath/Private/Core/EdrathTelemetrySubsystem.cpp`) supporting non-blocking queueing of narrative choices, memory mutations, regional clock instability heatmaps, ending distribution selections, and Sentry-compatible crash breadcrumb ring buffering.
+  - Added `[Sentry.SentrySettings]` configuration block in `Config/DefaultEngine.ini`.
+  - Added `FEdrathTelemetryAndCrashReportingTest` in `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp`.
 
 ## [0.7.0] - 2026-11-15
 
