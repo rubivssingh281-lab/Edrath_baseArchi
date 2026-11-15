@@ -3,6 +3,8 @@
 #include "BlackClock/EchoCombatComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/EdrathDualCameraComponent.h"
+#include "Character/KaelModularRigComponent.h"
+#include "Character/KaelTerrainAdaptationComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
@@ -18,6 +20,8 @@ AKaelCharacter::AKaelCharacter()
     DualCameraComponent = CreateDefaultSubobject<UEdrathDualCameraComponent>(TEXT("DualCameraComponent"));
     BlackClockComponent = CreateDefaultSubobject<UBlackClockComponent>(TEXT("BlackClockComponent"));
     EchoCombatComponent = CreateDefaultSubobject<UEdrathEchoCombatComponent>(TEXT("EchoCombatComponent"));
+    ModularRigComponent = CreateDefaultSubobject<UKaelModularRigComponent>(TEXT("ModularRigComponent"));
+    TerrainAdaptationComponent = CreateDefaultSubobject<UKaelTerrainAdaptationComponent>(TEXT("TerrainAdaptationComponent"));
 }
 
 void AKaelCharacter::BeginPlay()
@@ -26,6 +30,14 @@ void AKaelCharacter::BeginPlay()
     if (DualCameraComponent)
     {
         DualCameraComponent->InitializeCameraRig(CameraBoom, FollowCamera, this);
+    }
+    if (ModularRigComponent)
+    {
+        ModularRigComponent->InitializeModularRig(GetMesh());
+    }
+    if (TerrainAdaptationComponent)
+    {
+        TerrainAdaptationComponent->InitializeTerrainAdaptation(this, GetMesh());
     }
 }
 

@@ -11,7 +11,8 @@ public class Edrath : ModuleRules
         PublicDependencyModuleNames.AddRange(new string[]
         {
             "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
-            "GameplayTags", "Niagara", "UMG", "AIModule", "NavigationSystem"
+            "GameplayTags", "Niagara", "UMG", "AIModule", "NavigationSystem",
+            "PhysicsCore"
         });
         PrivateDependencyModuleNames.AddRange(new string[]
         {

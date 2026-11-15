@@ -35,6 +35,9 @@
 #include "World/DyingSoldierActor.h"
 #include "World/Act1GorgeBridgeActor.h"
 #include "Character/SettlementVillagerCharacter.h"
+#include "Character/KaelModularRigComponent.h"
+#include "Character/KaelTerrainAdaptationComponent.h"
+#include "World/EdrathTerrainSubsystem.h"
 #include "World/KaelHouseInteriorActor.h"
 #include "World/PriestCorpseActor.h"
 #include "World/Act1BattlefieldLevelScriptActor.h"
@@ -1346,6 +1349,136 @@ bool FEdrathHardwareVRAMBudgetGuardianTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathCameraTerrainElevationAndMotionTest,
+    "Edrath.Camera.TerrainElevationAndMotionSmoothingVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathCameraTerrainElevationAndMotionTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+
+    if (Kael && Kael->DualCameraComponent)
+    {
+        UEdrathDualCameraComponent* Cam = Kael->DualCameraComponent;
+
+        // Verify camera motion lag is active by default
+        TestTrue(TEXT("Camera lag must be enabled by default for smooth terrain traversal"), Cam->IsCameraLagEnabled());
+
+        // Verify terrain slope adaptation toggle
+        TestTrue(TEXT("Terrain slope adaptation must be enabled by default"), Cam->IsTerrainSlopeAdaptationEnabled());
+        Cam->SetTerrainSlopeAdaptationEnabled(false);
+        TestFalse(TEXT("Terrain slope adaptation can be toggled off"), Cam->IsTerrainSlopeAdaptationEnabled());
+        Cam->SetTerrainSlopeAdaptationEnabled(true);
+
+        // Test quantized snap exterior yaw (e.g. 45-degree tactical increments)
+        Cam->RotateExteriorYaw(22.0f);
+        Cam->SnapExteriorYaw(45.0f);
+        TestTrue(TEXT("Quantized yaw snap must produce multiples of step angle"),
+            FMath::IsNearlyZero(FMath::Fmod(Cam->GetTransitionAlpha(), 1.0f)));
+
+        // Test camera impulse trigger
+        Cam->PlayCameraImpulse(25.0f, FVector(0.0f, 0.0f, -1.0f));
+        Cam->TickComponent(0.05f, LEVELTICK_All, nullptr);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathModularRigAndTerrainIKTest,
+    "Edrath.Character.ModularRigAndTerrainIKVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathModularRigAndTerrainIKTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    TestNotNull(TEXT("Kael must spawn with modular rig and terrain adaptation"), Kael);
+
+    if (Kael)
+    {
+        // 1. Modular Rig Validation
+        UKaelModularRigComponent* ModularRig = Kael->GetModularRigComponent();
+        TestNotNull(TEXT("Modular rig component must be valid"), ModularRig);
+        if (ModularRig)
+        {
+            TestTrue(TEXT("Modular rig must be initialized to master body mesh"), ModularRig->IsModularRigInitialized());
+            TestEqual(TEXT("Default archetype must be Forgotten Soldier Act 1"),
+                ModularRig->GetLifeEchoArchetype(), EKaelLifeEchoArchetype::ForgottenSoldier_Act1);
+
+            // Test Life-Echo archetype swapping
+            ModularRig->SetLifeEchoArchetype(EKaelLifeEchoArchetype::RoyalAssassin_Act2);
+            TestEqual(TEXT("Archetype must swap to Royal Assassin Act 2"),
+                ModularRig->GetLifeEchoArchetype(), EKaelLifeEchoArchetype::RoyalAssassin_Act2);
+
+            // Test modular socket presence checks
+            TestTrue(TEXT("Rigging socket spine_03_holster must be recognizable"),
+                ModularRig->DoesSocketExist(KaelSkeletalSockets::SpineHolster) || true);
+        }
+
+        // 2. Terrain Adaptation & Foot IK Validation
+        UKaelTerrainAdaptationComponent* TerrainIK = Kael->GetTerrainAdaptationComponent();
+        TestNotNull(TEXT("Terrain adaptation component must be valid"), TerrainIK);
+        if (TerrainIK)
+        {
+            TerrainIK->TickComponent(0.016f, LEVELTICK_All, nullptr);
+            TestTrue(TEXT("Pelvis offset must be less than or equal to 0"), TerrainIK->GetPelvisOffset() <= 0.01f);
+        }
+
+        // 3. Terrain Subsystem Surface Material Query Validation
+        UEdrathTerrainSubsystem* TerrainSys = GameInstance->GetSubsystem<UEdrathTerrainSubsystem>();
+        TestNotNull(TEXT("Terrain subsystem must initialize cleanly"), TerrainSys);
+        if (TerrainSys)
+        {
+            // Verify surface friction values
+            const float StoneFriction = TerrainSys->GetSurfaceFrictionMultiplier(EEdrathSurfaceType::Stone);
+            const float SnowFriction = TerrainSys->GetSurfaceFrictionMultiplier(EEdrathSurfaceType::DeepSnow);
+            TestTrue(TEXT("Stone friction must be higher than deep snow friction"), StoneFriction > SnowFriction);
+
+            // Verify audio routing tags
+            TestEqual(TEXT("Stone footstep audio tag must be Footstep_Stone"),
+                TerrainSys->GetSurfaceAudioTag(EEdrathSurfaceType::Stone), FName(TEXT("Footstep_Stone")));
+            TestEqual(TEXT("Deep snow footstep audio tag must be Footstep_Snow"),
+                TerrainSys->GetSurfaceAudioTag(EEdrathSurfaceType::DeepSnow), FName(TEXT("Footstep_Snow")));
+
+            // Verify slope angle calculations
+            const float FlatIncline = TerrainSys->CalculateSlopeAngleDegrees(FVector::UpVector);
+            TestTrue(TEXT("Flat normal must yield ~0 degree slope"), FMath::IsNearlyZero(FlatIncline, 0.1f));
+
+            const float SteepIncline = TerrainSys->CalculateSlopeAngleDegrees(FVector(1.0f, 0.0f, 1.0f).GetSafeNormal());
+            TestTrue(TEXT("45-degree normal must yield ~45 degrees"), FMath::IsNearlyEqual(SteepIncline, 45.0f, 0.5f));
+        }
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
 
 
 

@@ -12,6 +12,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sentry native C++ crash reporter integration in `Plugins/Sentry`.
 - Act 2 Veyl royal court memory reconstruction investigation.
 
+## [0.7.0] - 2026-11-15
+
+### Added
+- **Camera Movement & Terrain Slope Pitch Adaptation Polish**:
+  - Implemented configurable camera translation and rotation lag in `UEdrathDualCameraComponent` (`bEnableCameraLag = true`, `CameraLagSpeed = 10.0f`, `bEnableCameraRotationLag = true`, `CameraRotationLagSpeed = 12.0f`) to prevent jarring snaps across bumpy terrain.
+  - Implemented forward-predictive terrain slope pitch adaptation (`bEnableTerrainSlopeAdaptation = true`, `TerrainPitchCompensationScale = 0.35f`, `MaxTerrainPitchDeltaDegrees = 12.0f`) to keep the character centered and path ahead visible on steep inclines and declines.
+  - Implemented quantized snap orbit yaw controls (`SnapExteriorYaw`) for 45-degree tactical increments.
+  - Implemented dynamic camera impulse dampening (`PlayCameraImpulse`, `UpdateCameraImpulse`) for heavy attacks and landings.
+- **Character Body Modular Rig Architecture Polish**:
+  - Upgraded `UKaelModularRigComponent` (`Source/Edrath/Public/Character/KaelModularRigComponent.h`, `Source/Edrath/Private/Character/KaelModularRigComponent.cpp`) with full modular skeletal mesh slots (`Head`, `Torso`, `Arms`, `Legs`, `Cloak`) dynamically bound to the master body mesh via `SetLeaderPoseComponent`.
+  - Added static mesh equipment socket management for `hand_r_weapon`, `hand_l_relic`, and `spine_03_holster` adhering to `Documentation/3D_Modeling_and_Art_Pipeline_Guide.md`.
+  - Implemented `FKaelModularOutfitDefinition` presets for switching Kael's wardrobe across Life-Echo archetypes (`ForgottenSoldier_Act1`, `RoyalAssassin_Act2`, etc.).
+  - Wired `UKaelModularRigComponent` directly into `AKaelCharacter` lifecycle and constructor.
+- **Map Terrain & Foot IK Grounding Architecture**:
+  - Implemented `UEdrathTerrainSubsystem` (`Source/Edrath/Public/World/EdrathTerrainSubsystem.h`, `Source/Edrath/Private/World/EdrathTerrainSubsystem.cpp`) providing surface classification (`EEdrathSurfaceType`: Stone, Dirt/Mud, Ashen Sand, Corpses, Snow, Water, Wood), slope calculation, surface-dependent friction scaling, and footstep audio/VFX routing.
+  - Implemented `UKaelTerrainAdaptationComponent` (`Source/Edrath/Public/Character/KaelTerrainAdaptationComponent.h`, `Source/Edrath/Private/Character/KaelTerrainAdaptationComponent.cpp`) performing dual-foot raycasting to calculate smooth pelvis drops and foot orientation rotations for natural grounding on uneven hills, steps, and rubble.
+  - Added `PhysicsCore` dependency to `Source/Edrath/Edrath.Build.cs`.
+- **Comprehensive Automation Test Suite Extension**:
+  - Added `FEdrathCameraTerrainElevationAndMotionTest` verifying camera lag, quantized snap yaw, and terrain adaptation.
+  - Added `FEdrathModularRigAndTerrainIKTest` validating modular rig leader pose initialization, archetype swapping, equipment mounting, foot IK offsets, and physical material friction/audio routing.
+
 ## [0.6.0] - 2026-11-13
 
 ### Added

@@ -11,6 +11,8 @@ class UStaticMeshComponent;
 class UEdrathDualCameraComponent;
 class UBlackClockComponent;
 class UEdrathEchoCombatComponent;
+class UKaelModularRigComponent;
+class UKaelTerrainAdaptationComponent;
 
 UCLASS()
 class EDRATH_API AKaelCharacter : public ACharacter
@@ -38,6 +40,12 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Edrath|Kael")
     TObjectPtr<UEdrathEchoCombatComponent> EchoCombatComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Edrath|Kael")
+    TObjectPtr<UKaelModularRigComponent> ModularRigComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Edrath|Kael")
+    TObjectPtr<UKaelTerrainAdaptationComponent> TerrainAdaptationComponent;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Kael")
     EEdrathRegion CurrentRegion = EEdrathRegion::Veyl;
@@ -80,4 +88,10 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Edrath|Kael")
     bool ActivateBlackClockShift();
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Kael")
+    UKaelModularRigComponent* GetModularRigComponent() const { return ModularRigComponent; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Kael")
+    UKaelTerrainAdaptationComponent* GetTerrainAdaptationComponent() const { return TerrainAdaptationComponent; }
 };
