@@ -6,6 +6,21 @@
 #include "EdrathHardwareOptimizationSubsystem.generated.h"
 
 /**
+ * Operating thermal and battery state for laptop and mobile platforms.
+ */
+UENUM(BlueprintType)
+enum class EEdrathThermalStatus : uint8
+{
+    Nominal UMETA(DisplayName = "Nominal (Full Performance)"),
+    Fair UMETA(DisplayName = "Fair (Mild Fan Activity)"),
+    Serious UMETA(DisplayName = "Serious (Thermal Throttling Caution)"),
+    Critical UMETA(DisplayName = "Critical (Emergency Power / Thermal Cutback)")
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVRAMEmergencyRecoverySignature, int32, EstimatedRecoveredMB);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnThermalMitigationAppliedSignature, EEdrathThermalStatus, Status, float, MaxTargetFPS);
+
+/**
  * Detected hardware profile used for VRAM-aware budget allocation.
  */
 USTRUCT(BlueprintType)
@@ -122,6 +137,26 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|Performance|VRAM")
     bool CheckAndEnforceVRAMSentinel(float SimulatedUsedVRAMMB = -1.0f);
 
+    /** Actively recovers emergency VRAM by purging overbudget mips, scaling LOD biases, and dropping cascade allocations. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Performance|VRAM")
+    int32 RecoverEmergencyVRAM();
+
+    /** Applies thermal and battery mitigation profile to protect mobile TBDR GPUs and laptop envelopes. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Performance|Thermal")
+    void ApplyThermalMitigation(EEdrathThermalStatus ThermalStatus);
+
+    /** Checks whether Pipeline State Object (PSO) precaching is active. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Performance|PSO")
+    bool IsPSOPrecached() const;
+
+    /** Number of emergency VRAM recoveries executed during this session. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Performance|VRAM")
+    int32 GetEmergencyRecoveryCount() const { return EmergencyRecoveryCount; }
+
+    /** Current platform thermal status. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Performance|Thermal")
+    EEdrathThermalStatus GetCurrentThermalStatus() const { return CurrentThermalStatus; }
+
     /** Current dynamic VRAM sentinel throttling level: 0 = Normal, 1 = Caution, 2 = Emergency Throttling */
     UFUNCTION(BlueprintPure, Category="Edrath|Performance|VRAM")
     int32 GetActiveVRAMThrottleLevel() const { return ActiveVRAMThrottleLevel; }
@@ -129,6 +164,12 @@ public:
     /** Gets the 90% critical threshold in MB */
     UFUNCTION(BlueprintPure, Category="Edrath|Performance|VRAM")
     float GetVRAMSafetyThresholdMB() const { return static_cast<float>(VRAMCeilingMB) * 0.90f; }
+
+    UPROPERTY(BlueprintAssignable, Category="Edrath|Performance|VRAM")
+    FOnVRAMEmergencyRecoverySignature OnVRAMEmergencyRecovery;
+
+    UPROPERTY(BlueprintAssignable, Category="Edrath|Performance|Thermal")
+    FOnThermalMitigationAppliedSignature OnThermalMitigationApplied;
 
 private:
     /** Detect GPU, CPU, and RAM via platform APIs and RHI. */
@@ -155,4 +196,6 @@ private:
     EEdrathCameraMode OptimizedCameraMode = EEdrathCameraMode::ExteriorBirdsEye;
     ETimelineState OptimizedTimelineState = ETimelineState::PresentTimeline;
     int32 ActiveVRAMThrottleLevel = 0;
+    int32 EmergencyRecoveryCount = 0;
+    EEdrathThermalStatus CurrentThermalStatus = EEdrathThermalStatus::Nominal;
 };

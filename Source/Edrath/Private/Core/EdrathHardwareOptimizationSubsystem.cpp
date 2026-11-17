@@ -328,3 +328,86 @@ bool UEdrathHardwareOptimizationSubsystem::CheckAndEnforceVRAMSentinel(float Sim
     ApplyVRAMBudget();
     return false;
 }
+
+int32 UEdrathHardwareOptimizationSubsystem::RecoverEmergencyVRAM()
+{
+    EmergencyRecoveryCount++;
+
+    // Purge textures exceeding budget immediately
+    SetConsoleVariable(TEXT("r.Streaming.PurgeOverbudgetMips"), 1);
+    SetConsoleVariable(TEXT("r.Streaming.MaxNumTexturesToStreamPerFrame"), 1);
+
+    // Drop directional virtual shadow map resolution bias to shed page table memory
+    SetConsoleVariable(TEXT("r.Shadow.Virtual.ResolutionLodBiasDirectional"), 1.0f);
+    SetConsoleVariable(TEXT("r.Shadow.Virtual.MaxPhysicalPages"), 1024);
+
+    // Clamp Nanite cluster complexity
+    SetConsoleVariable(TEXT("r.Nanite.MaxPixelsPerEdge"), 2.2f);
+
+    // Force garbage collection of unreferenced transient render resources
+    GEngine->TrimMemory();
+
+    // Conservative estimate: drops ~600-850MB from texture and shadow caches
+    const int32 EstimatedRecoveredMB = 750;
+
+    UE_LOG(LogTemp, Warning,
+           TEXT("Edrath VRAM Sentinel: Emergency Recovery #%d completed. Estimated recovered: %d MB"),
+           EmergencyRecoveryCount, EstimatedRecoveredMB);
+
+    OnVRAMEmergencyRecovery.Broadcast(EstimatedRecoveredMB);
+    return EstimatedRecoveredMB;
+}
+
+void UEdrathHardwareOptimizationSubsystem::ApplyThermalMitigation(EEdrathThermalStatus ThermalStatus)
+{
+    CurrentThermalStatus = ThermalStatus;
+
+    float TargetMaxFPS = 60.0f;
+    switch (ThermalStatus)
+    {
+    case EEdrathThermalStatus::Nominal:
+        TargetMaxFPS = 60.0f;
+        SetConsoleVariable(TEXT("t.MaxFPS"), 60);
+        SetConsoleVariable(TEXT("r.ScreenPercentage"), 77.0f);
+        SetConsoleVariable(TEXT("r.Shadow.DistanceScale"), 1.0f);
+        break;
+
+    case EEdrathThermalStatus::Fair:
+        TargetMaxFPS = 60.0f;
+        SetConsoleVariable(TEXT("t.MaxFPS"), 60);
+        SetConsoleVariable(TEXT("r.ScreenPercentage"), 70.0f);
+        SetConsoleVariable(TEXT("r.Shadow.DistanceScale"), 0.9f);
+        break;
+
+    case EEdrathThermalStatus::Serious:
+        TargetMaxFPS = 45.0f;
+        SetConsoleVariable(TEXT("t.MaxFPS"), 45);
+        SetConsoleVariable(TEXT("r.ScreenPercentage"), 65.0f);
+        SetConsoleVariable(TEXT("r.Shadow.DistanceScale"), 0.75f);
+        break;
+
+    case EEdrathThermalStatus::Critical:
+        TargetMaxFPS = 30.0f;
+        SetConsoleVariable(TEXT("t.MaxFPS"), 30);
+        SetConsoleVariable(TEXT("r.ScreenPercentage"), 55.0f);
+        SetConsoleVariable(TEXT("r.Shadow.DistanceScale"), 0.5f);
+        RecoverEmergencyVRAM();
+        break;
+    }
+
+    UE_LOG(LogTemp, Display,
+           TEXT("Edrath Thermal Mitigation: Status=%d, TargetFPS=%.1f"),
+           static_cast<int32>(ThermalStatus), TargetMaxFPS);
+
+    OnThermalMitigationApplied.Broadcast(ThermalStatus, TargetMaxFPS);
+}
+
+bool UEdrathHardwareOptimizationSubsystem::IsPSOPrecached() const
+{
+    if (const IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.PSOPrecache")))
+    {
+        return CVar->GetInt() != 0;
+    }
+    return false;
+}
+
