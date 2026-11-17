@@ -9,7 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
-- Act 3 Hollowgreen physical memory realm level instances.
+- Act 4 Nhal subterranean Metropolis World Partition grid.
+
+## [0.9.0] - 2026-11-17
+
+### Added
+- **Rendering Pipeline, VRAM Budgets & Thermal Adaptation**:
+  - Implemented dynamic thermal mitigation in `UEdrathHardwareOptimizationSubsystem` (`Nominal`, `Fair`, `Serious`, `Critical`) adjusting frame limits (`t.MaxFPS`), dynamic resolution scaling, and shadow distance to preserve mobile/laptop thermal envelopes.
+  - Implemented `RecoverEmergencyVRAM()` routine shedding texture mips over budget (`r.Streaming.PurgeOverbudgetMips 1`), clamping directional virtual shadow map resolution bias, and calling `GEngine->TrimMemory()`.
+  - Configured Unreal Engine 5.5 Pipeline State Object (PSO) precaching (`r.PSOPrecache=1`, `r.PSOPrecache.Validation=1`) in `Config/DefaultEngine.ini` to eliminate runtime transition hitching.
+  - Configured asynchronous loading threads (`s.AsyncLoadingThreadEnabled=1`, `s.EventDrivenLoaderEnabled=1`) and aggressive garbage collection clustering (`gc.TimeBetweenPurgingPendingKillObjects=30`).
+  - Added Vulkan pipeline cache and mobile memory compaction overrides in `Config/Android/AndroidEngine.ini`.
+- **Act 3 Hollowgreen Physical Memory Realms & World Mutation Anchors**:
+  - Implemented `AMemoryAnchorActor` (`Source/Edrath/Public/Narrative/MemoryAnchorActor.h`, `Source/Edrath/Private/Narrative/MemoryAnchorActor.cpp`) supporting physical interactive memory anchors in Hollowgreen memory sub-levels that trigger `UEdrathNarrativeSubsystem::RecordForestMutation()`.
+  - Implemented `AAct3HollowgreenDirector` (`Source/Edrath/Public/World/Act3HollowgreenDirector.h`, `Source/Edrath/Private/World/Act3HollowgreenDirector.cpp`) orchestrating Act III (*The Forest of Your Other Lives*): discovery of the three alternate life echoes (`PlaguedHealer_Act3`, `TyrantConqueror_Act3`, `SimpleFarmer_Act3`), modular outfit preset synchronization, and the dramatic confrontation with Ilyra unlocking the loop attempt truth (`Story.Act3.LoopAttemptsRevealed`).
+- **Comprehensive Automation Test Suite Expansion**:
+  - Added `FEdrathAct3HollowgreenMemoryRealmTest` in `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp` validating memory fruit harvesting, memory anchor alteration, forest mutation tracking, alternate life echo discovery, and Ilyra loop confrontation.
+  - Added `FEdrathEnginePerformanceOptimizationTest` in `Source/Edrath/Private/Tests/EdrathPreAlphaAutomationTest.cpp` verifying emergency VRAM recovery thresholds, thermal mitigation state machine transitions, and PSO precache detection.
 
 ## [0.8.0] - 2026-11-15
 

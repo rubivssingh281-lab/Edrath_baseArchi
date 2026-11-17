@@ -34,9 +34,9 @@ To clean transient build packages and reclaim 20-50GB on 512GB laptop drives:
 
 ---
 
-## 🏗️ 6-Phase Master Polish Architecture
+## 🏗️ 8-Phase Master Polish Architecture
 
-The codebase features an end-to-end, deterministic 6-phase polish across all gameplay, graphics, memory, and narrative subsystems:
+The codebase features an end-to-end, deterministic 8-phase polish across all gameplay, graphics, memory, and narrative subsystems:
 
 | Phase | Subsystem & Technical Scope | Key C++ Classes & Shaders | Automated Verification Test |
 | :--- | :--- | :--- | :--- |
@@ -46,6 +46,8 @@ The codebase features an end-to-end, deterministic 6-phase polish across all gam
 | **Phase 4** | **Act 1 Five-Zone Playable Slice Continuity** | `AAct1PreAlphaSliceDirector`, `PossibilityDissolve.usf` | `FEdrathAct1FiveZoneContinuityTest` |
 | **Phase 5** | **8GB VRAM Budget Guardian & Sentinel** | `UEdrathHardwareOptimizationSubsystem`, `DefaultScalability.ini` | `FEdrathHardwareVRAMBudgetGuardianTest` |
 | **Phase 6** | **Comprehensive Automation & Invariant Validation** | `EdrathPreAlphaAutomationTest.cpp`, `CHANGELOG.md` | Full Automation Test Suite |
+| **Phase 7** | **Act 2 Veyl Court & Async Telemetry** | `AAct2VeylCourtDirector`, `UEdrathTelemetrySubsystem` | `FEdrathAct2VeylCourtInvestigationTest`, `FEdrathTelemetryAndCrashReportingTest` |
+| **Phase 8** | **Act 3 Hollowgreen & Emergency VRAM Recovery** | `AAct3HollowgreenDirector`, `AMemoryAnchorActor` | `FEdrathAct3HollowgreenMemoryRealmTest`, `FEdrathEnginePerformanceOptimizationTest` |
 
 ---
 

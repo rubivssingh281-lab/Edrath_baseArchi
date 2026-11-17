@@ -43,6 +43,8 @@
 #include "World/PriestCorpseActor.h"
 #include "World/Act1BattlefieldLevelScriptActor.h"
 #include "World/Act2VeylCourtDirector.h"
+#include "World/Act3HollowgreenDirector.h"
+#include "Narrative/MemoryAnchorActor.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -109,6 +111,7 @@ bool FEdrathPreAlphaVerticalSliceTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 
 
@@ -234,6 +237,7 @@ bool FEdrathAct1PreAlphaFiveZoneTest::RunTest(const FString&)
 
 
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathHUDAndForensicUIVerificationTest,
     "Edrath.PreAlpha.HUDAndForensicUIVerification",
@@ -345,6 +349,7 @@ bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
 
 
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathSixRegionsWorldActorsTest,
     "Edrath.PreAlpha.SixRegionsWorldActors",
@@ -422,6 +427,7 @@ bool FEdrathSixRegionsWorldActorsTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 
 
@@ -576,6 +582,7 @@ bool FEdrathQuestAndCompanionSystemsTest::RunTest(const FString&)
 
 
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathHUDAndForensicUIVerificationTest,
     "Edrath.PreAlpha.HUDAndForensicUIVerification",
@@ -683,6 +690,7 @@ bool FEdrathHUDAndForensicUIVerificationTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 
 
@@ -814,6 +822,7 @@ bool FEdrathFullUIAndHUDArchitectureVerificationTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 
 
@@ -996,6 +1005,7 @@ bool FEdrathStage2ComprehensiveVerticalSlicePlaythroughTest::RunTest(const FStri
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathDualCameraAntiClippingAndRoofFadeTest,
     "Edrath.Camera.DualPerspectiveTransitionAndRoofFadeVerification",
@@ -1054,6 +1064,7 @@ bool FEdrathDualCameraAntiClippingAndRoofFadeTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathEchoCombatSubFrameInterpolationTest,
@@ -1131,6 +1142,7 @@ bool FEdrathEchoCombatSubFrameInterpolationTest::RunTest(const FString&)
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathForensicContradictionDeductionTest,
     "Edrath.PreAlpha.ForensicContradictionAndSettlementBreakTest",
@@ -1191,6 +1203,7 @@ bool FEdrathForensicContradictionDeductionTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathAct1FiveZoneContinuityTest,
@@ -1297,6 +1310,7 @@ bool FEdrathAct1FiveZoneContinuityTest::RunTest(const FString&)
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathHardwareVRAMBudgetGuardianTest,
     "Edrath.Hardware.VRAMBudgetGuardianAndDynamicSentinelTest",
@@ -1352,6 +1366,7 @@ bool FEdrathHardwareVRAMBudgetGuardianTest::RunTest(const FString&)
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathCameraTerrainElevationAndMotionTest,
     "Edrath.Camera.TerrainElevationAndMotionSmoothingVerification",
@@ -1400,6 +1415,7 @@ bool FEdrathCameraTerrainElevationAndMotionTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathModularRigAndTerrainIKTest,
@@ -1481,6 +1497,7 @@ bool FEdrathModularRigAndTerrainIKTest::RunTest(const FString&)
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathAct2VeylCourtInvestigationTest,
     "Edrath.Act2.VeylCourtInvestigationAndBeliefDissolveTest",
@@ -1555,6 +1572,7 @@ bool FEdrathAct2VeylCourtInvestigationTest::RunTest(const FString&)
     return !HasAnyErrors();
 }
 
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathTelemetryAndCrashReportingTest,
     "Edrath.Core.TelemetryAndCrashReportingVerification",
@@ -1608,6 +1626,167 @@ bool FEdrathTelemetryAndCrashReportingTest::RunTest(const FString&)
     TestWorld->DestroyWorld(false);
     return !HasAnyErrors();
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathAct3HollowgreenMemoryRealmTest,
+    "Edrath.Act3.HollowgreenMemoryRealmsAndIlyraLoopVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathAct3HollowgreenMemoryRealmTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathNarrativeSubsystem* Narrative = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>();
+    TestNotNull(TEXT("Narrative subsystem must be valid"), Narrative);
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    TestNotNull(TEXT("Kael character must spawn cleanly"), Kael);
+
+    AMemoryFruitTreeActor* FruitTree = TestWorld->SpawnActor<AMemoryFruitTreeActor>();
+    TestNotNull(TEXT("Memory fruit tree must spawn cleanly"), FruitTree);
+
+    AMemoryAnchorActor* Anchor = TestWorld->SpawnActor<AMemoryAnchorActor>();
+    TestNotNull(TEXT("Memory anchor must spawn cleanly"), Anchor);
+    Anchor->AnchorTag = EdrathGameplayTags::Twist3;
+    Anchor->AssociatedEchoArchetype = EKaelLifeEchoArchetype::PlaguedHealer_Act3;
+
+    AAct3HollowgreenDirector* Director = TestWorld->SpawnActor<AAct3HollowgreenDirector>();
+    TestNotNull(TEXT("Act 3 Hollowgreen director must spawn cleanly"), Director);
+
+    if (Director && Narrative && Kael && FruitTree && Anchor)
+    {
+        // 1. Initialize Act 3 Director
+        Director->InitializeAct3(Kael, FruitTree);
+        TestEqual(TEXT("Initial state is ExploringMemoryRealms"),
+            Director->GetAct3State(), EAct3HollowgreenState::ExploringMemoryRealms);
+
+        // 2. Test Memory Fruit Harvesting
+        TestFalse(TEXT("Memory fruit tree begins unharvested"), FruitTree->HasBeenHarvested());
+        FruitTree->HarvestMemoryFruit(Kael);
+        TestTrue(TEXT("Memory fruit tree records harvested"), FruitTree->HasBeenHarvested());
+
+        // 3. Test Memory Anchor Alteration & Narrative Mutation
+        TestFalse(TEXT("Anchor begins unaltered"), Anchor->IsAltered());
+        const bool bAltered = Anchor->AlterAnchor(Kael, FText::FromString(TEXT("Kael eradicated the plague but poisoned the soil.")));
+        TestTrue(TEXT("Anchor successfully alters"), bAltered);
+        TestTrue(TEXT("Anchor reports altered"), Anchor->IsAltered());
+        TestTrue(TEXT("Narrative records forest mutation version >= 1"),
+            Narrative->GetForestMutationVersion(EdrathGameplayTags::Twist3) >= 1);
+
+        // 4. Test Discovery of All Three Canonical Echo Archetypes
+        TestEqual(TEXT("Discovered echoes begin at 0"), Director->GetDiscoveredEchoCount(), 0);
+
+        // Plagued Healer Echo
+        TestTrue(TEXT("Discovers Plagued Healer echo"),
+            Director->RegisterEchoDiscovery(EKaelLifeEchoArchetype::PlaguedHealer_Act3));
+        TestEqual(TEXT("State advances to HealerEchoDiscovered"),
+            Director->GetAct3State(), EAct3HollowgreenState::HealerEchoDiscovered);
+        TestTrue(TEXT("Director tracks Healer echo"),
+            Director->HasDiscoveredEcho(EKaelLifeEchoArchetype::PlaguedHealer_Act3));
+
+        // Tyrant Conqueror Echo
+        TestTrue(TEXT("Discovers Tyrant Conqueror echo"),
+            Director->RegisterEchoDiscovery(EKaelLifeEchoArchetype::TyrantConqueror_Act3));
+        TestEqual(TEXT("State advances to TyrantEchoDiscovered"),
+            Director->GetAct3State(), EAct3HollowgreenState::TyrantEchoDiscovered);
+
+        // Simple Farmer Echo
+        TestTrue(TEXT("Discovers Simple Farmer echo"),
+            Director->RegisterEchoDiscovery(EKaelLifeEchoArchetype::SimpleFarmer_Act3));
+        TestEqual(TEXT("All 3 echoes discovered, state advances to IlyraConfrontation"),
+            Director->GetAct3State(), EAct3HollowgreenState::IlyraConfrontation);
+        TestEqual(TEXT("Discovered echo count is 3"), Director->GetDiscoveredEchoCount(), 3);
+
+        // Cannot re-discover duplicates
+        TestFalse(TEXT("Duplicate echo discovery rejected"),
+            Director->RegisterEchoDiscovery(EKaelLifeEchoArchetype::PlaguedHealer_Act3));
+
+        // 5. Test Ilyra Loop Revelation Confrontation
+        TestFalse(TEXT("Act 3 is not completed before Ilyra confrontation"), Director->IsAct3Completed());
+        const bool bConfronted = Director->ConfrontIlyra(true);
+        TestTrue(TEXT("Ilyra confrontation resolves successfully"), bConfronted);
+        TestEqual(TEXT("Final state is Act3Completed"),
+            Director->GetAct3State(), EAct3HollowgreenState::Act3Completed);
+        TestTrue(TEXT("Director reports Act 3 completed"), Director->IsAct3Completed());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathEnginePerformanceOptimizationTest,
+    "Edrath.Perf.VRAMEmergencyRecoveryAndThermalMitigationVerification",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathEnginePerformanceOptimizationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathHardwareOptimizationSubsystem* HardwareOpt = GameInstance->GetSubsystem<UEdrathHardwareOptimizationSubsystem>();
+    TestNotNull(TEXT("Hardware optimization subsystem must initialize cleanly"), HardwareOpt);
+
+    if (HardwareOpt)
+    {
+        // 1. Verify VRAM Safety Threshold & Sentinel Calculations
+        const float VRAMCeiling = static_cast<float>(HardwareOpt->GetVRAMCeilingMB());
+        TestTrue(TEXT("VRAM Ceiling must be >= 2048 MB"), VRAMCeiling >= 2048.0f);
+
+        const float SafetyThreshold = HardwareOpt->GetVRAMSafetyThresholdMB();
+        TestEqual(TEXT("Safety threshold must be exactly 90% of ceiling"),
+            SafetyThreshold, VRAMCeiling * 0.90f);
+
+        // 2. Verify Emergency VRAM Recovery
+        const int32 InitialRecoveries = HardwareOpt->GetEmergencyRecoveryCount();
+        const int32 RecoveredMB = HardwareOpt->RecoverEmergencyVRAM();
+        TestTrue(TEXT("Emergency recovery sheds at least 500 MB"), RecoveredMB >= 500);
+        TestEqual(TEXT("Emergency recovery count increments"),
+            HardwareOpt->GetEmergencyRecoveryCount(), InitialRecoveries + 1);
+
+        // 3. Verify Thermal Mitigation States
+        TestEqual(TEXT("Initial thermal status is Nominal"),
+            HardwareOpt->GetCurrentThermalStatus(), EEdrathThermalStatus::Nominal);
+
+        HardwareOpt->ApplyThermalMitigation(EEdrathThermalStatus::Fair);
+        TestEqual(TEXT("Thermal status updates to Fair"),
+            HardwareOpt->GetCurrentThermalStatus(), EEdrathThermalStatus::Fair);
+
+        HardwareOpt->ApplyThermalMitigation(EEdrathThermalStatus::Serious);
+        TestEqual(TEXT("Thermal status updates to Serious"),
+            HardwareOpt->GetCurrentThermalStatus(), EEdrathThermalStatus::Serious);
+
+        HardwareOpt->ApplyThermalMitigation(EEdrathThermalStatus::Critical);
+        TestEqual(TEXT("Thermal status updates to Critical"),
+            HardwareOpt->GetCurrentThermalStatus(), EEdrathThermalStatus::Critical);
+
+        // Restore to Nominal
+        HardwareOpt->ApplyThermalMitigation(EEdrathThermalStatus::Nominal);
+        TestEqual(TEXT("Thermal status successfully restored to Nominal"),
+            HardwareOpt->GetCurrentThermalStatus(), EEdrathThermalStatus::Nominal);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
 
 
 
