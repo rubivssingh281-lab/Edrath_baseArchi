@@ -36,3 +36,13 @@ We follow Epic Games' official Unreal Engine coding guidelines:
   - `docs/<topic>`: Documentation, Nanite budgets, or architectural specs.
   - `chore/<task>`: Build tooling, device profiles, or dependency updates.
 - **Commit Messages**: Follow Conventional Commits format (`feat:`, `fix:`, `docs:`, `chore:`).
+
+## 4. Shared Contributions
+
+When collaborating on a change, include the GitHub `Co-authored-by` trailer in the commit message for every participating contributor. A trailer must use the contributor's verified GitHub email address:
+
+```text
+Co-authored-by: Contributor Name <email@example.com>
+```
+
+This records shared authorship and makes collaborative contributions visible in the repository history.
