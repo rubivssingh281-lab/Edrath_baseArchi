@@ -1,0 +1,8 @@
+{
+  "DataLayerAsset": "DataLayer_RejectedTimeline",
+  "DataLayerType": "Runtime",
+  "InitialRuntimeState": "Loaded",
+  "bIsSpatial": true,
+  "TargetPlatforms": ["All"],
+  "Description": "Rejected future timeline possibilities. Kept loaded in VRAM with collision and visibility toggled via Black Clock APossibilityShiftActor instances."
+}
