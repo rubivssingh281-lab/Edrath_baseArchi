@@ -1,0 +1,41 @@
+name: UE5 Syntax and Test Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unreal source structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f Edrath.uproject
+          test -f Source/Edrath/Edrath.Build.cs
+          while IFS= read -r -d '' header; do
+            if grep -Eq 'UENUM|USTRUCT|UCLASS|UPROPERTY|UFUNCTION' "$header"; then
+              generated_line=$(grep -n 'generated\.h"' "$header" | tail -n 1 | cut -d: -f1 || true)
+              include_line=$(grep -n '^#include' "$header" | tail -n 1 | cut -d: -f1 || true)
+              test -n "$generated_line"
+              test "$generated_line" -ge "$include_line"
+              test "$(sed -n "${generated_line}p" "$header" | grep -c 'generated\.h"')" -eq 1
+            fi
+          done < <(find Source -type f -name '*.h' -print0)
+
+      - name: Validate Git LFS tracking rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs track
+          grep -q '\*\.uasset.*lockable' .gitattributes
+          grep -q '\*\.umap.*lockable' .gitattributes
+          for extension in fbx obj blend png tga exr hdr wav ogg mp4; do
+            grep -q "\*\.$extension filter=lfs" .gitattributes
+          done

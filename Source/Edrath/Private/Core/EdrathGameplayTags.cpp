@@ -1,0 +1,55 @@
+#include "Core/EdrathGameplayTags.h"
+
+namespace EdrathGameplayTags
+{
+    UE_DEFINE_GAMEPLAY_TAG(RegionVeyl, "Region.Veyl");
+    UE_DEFINE_GAMEPLAY_TAG(RegionHollowgreen, "Region.Hollowgreen");
+    UE_DEFINE_GAMEPLAY_TAG(RegionAshenExpanse, "Region.AshenExpanse");
+    UE_DEFINE_GAMEPLAY_TAG(RegionNhal, "Region.Nhal");
+    UE_DEFINE_GAMEPLAY_TAG(RegionCrownOfWinter, "Region.CrownOfWinter");
+    UE_DEFINE_GAMEPLAY_TAG(RegionUnwrittenSea, "Region.UnwrittenSea");
+    UE_DEFINE_GAMEPLAY_TAG(Act1, "Act.1");
+    UE_DEFINE_GAMEPLAY_TAG(Act2, "Act.2");
+    UE_DEFINE_GAMEPLAY_TAG(Act3, "Act.3");
+    UE_DEFINE_GAMEPLAY_TAG(Act4, "Act.4");
+    UE_DEFINE_GAMEPLAY_TAG(Act5, "Act.5");
+    UE_DEFINE_GAMEPLAY_TAG(Act6, "Act.6");
+    UE_DEFINE_GAMEPLAY_TAG(Twist1, "Story.Twist1");
+    UE_DEFINE_GAMEPLAY_TAG(Twist2, "Story.Twist2");
+    UE_DEFINE_GAMEPLAY_TAG(Twist3, "Story.Twist3");
+    UE_DEFINE_GAMEPLAY_TAG(Twist4, "Story.Twist4");
+    UE_DEFINE_GAMEPLAY_TAG(Twist5, "Story.Twist5");
+    UE_DEFINE_GAMEPLAY_TAG(Twist6, "Story.Twist6");
+    UE_DEFINE_GAMEPLAY_TAG(QuestAct1Crypt, "Quest.Act1.CryptTwist");
+    UE_DEFINE_GAMEPLAY_TAG(FactionNhalRestorationists, "Faction.Nhal.Restorationists");
+    UE_DEFINE_GAMEPLAY_TAG(FactionNhalRevanchists, "Faction.Nhal.Revanchists");
+    UE_DEFINE_GAMEPLAY_TAG(QuestWeddingNotHappened, "Quest.WeddingNotHappened");
+    UE_DEFINE_GAMEPLAY_TAG(QuestBuriedFuture, "Quest.BuriedFuture");
+    UE_DEFINE_GAMEPLAY_TAG(QuestVillageVotesOnDead, "Quest.VillageVotesOnDead");
+    UE_DEFINE_GAMEPLAY_TAG(QuestDragonNoFire, "Quest.DragonNoFire");
+    UE_DEFINE_GAMEPLAY_TAG(QuestLastHonestKing, "Quest.LastHonestKing");
+    UE_DEFINE_GAMEPLAY_TAG(QuestHouseOneMoreRoom, "Quest.HouseOneMoreRoom");
+    UE_DEFINE_GAMEPLAY_TAG(QuestWeddingMergeTimelines, "Quest.WeddingNotHappened.MergeTimelines");
+    UE_DEFINE_GAMEPLAY_TAG(QuestWeddingSeverMemoryEcho, "Quest.WeddingNotHappened.SeverMemoryEcho");
+    UE_DEFINE_GAMEPLAY_TAG(QuestBuriedFutureLovingFather, "Quest.BuriedFuture.LovingFather");
+    UE_DEFINE_GAMEPLAY_TAG(QuestBuriedFutureViolentStranger, "Quest.BuriedFuture.ViolentStranger");
+    UE_DEFINE_GAMEPLAY_TAG(QuestDragonReturnMemories, "Quest.DragonNoFire.ReturnMemories");
+    UE_DEFINE_GAMEPLAY_TAG(QuestDragonPreservePeace, "Quest.DragonNoFire.PreservePeace");
+    UE_DEFINE_GAMEPLAY_TAG(QuestLastKingExposeTruth, "Quest.LastHonestKing.ExposeTruth");
+    UE_DEFINE_GAMEPLAY_TAG(QuestLastKingPreservePeace, "Quest.LastHonestKing.PreservePeace");
+    UE_DEFINE_GAMEPLAY_TAG(QuestVillageResurrectDead, "Quest.VillageVotesOnDead.ResurrectDead");
+    UE_DEFINE_GAMEPLAY_TAG(QuestVillageExposeMayor, "Quest.VillageVotesOnDead.ExposeMayor");
+    UE_DEFINE_GAMEPLAY_TAG(QuestVillagePreserveMayor, "Quest.VillageVotesOnDead.PreserveMayor");
+    UE_DEFINE_GAMEPLAY_TAG(QuestHouseRememberOwner, "Quest.HouseOneMoreRoom.RememberOwner");
+    UE_DEFINE_GAMEPLAY_TAG(CombatEchoStrike, "Combat.EchoStrike");
+    UE_DEFINE_GAMEPLAY_TAG(CombatTimelinePhase, "Combat.TimelinePhase");
+    UE_DEFINE_GAMEPLAY_TAG(EnemyBattlefieldWraith, "Enemy.BattlefieldWraith");
+    UE_DEFINE_GAMEPLAY_TAG(NarrativeDyingSoldier, "Narrative.Act1.DyingSoldier");
+    UE_DEFINE_GAMEPLAY_TAG(EvidenceHandwriting, "Evidence.Act1.Handwriting");
+    UE_DEFINE_GAMEPLAY_TAG(EvidenceScratchedPortrait, "Evidence.Act1.ScratchedPortrait");
+    UE_DEFINE_GAMEPLAY_TAG(EvidencePriestCorpse114Years, "Evidence.Act1.PriestCorpse114Years");
+    UE_DEFINE_GAMEPLAY_TAG(EvidencePriestLivingVoice, "Evidence.Act1.PriestLivingVoice");
+    UE_DEFINE_GAMEPLAY_TAG(DeductionAct1CryptPriestContradiction, "Deduction.Act1.CryptPriestContradiction");
+    UE_DEFINE_GAMEPLAY_TAG(SettlementLoopDay, "Narrative.Act1.SettlementLoopDay");
+    UE_DEFINE_GAMEPLAY_TAG(SettlementLoopReset, "Narrative.Act1.SettlementLoopReset");
+}
