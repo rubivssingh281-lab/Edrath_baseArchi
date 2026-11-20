@@ -52,4 +52,12 @@ namespace EdrathGameplayTags
     UE_DEFINE_GAMEPLAY_TAG(DeductionAct1CryptPriestContradiction, "Deduction.Act1.CryptPriestContradiction");
     UE_DEFINE_GAMEPLAY_TAG(SettlementLoopDay, "Narrative.Act1.SettlementLoopDay");
     UE_DEFINE_GAMEPLAY_TAG(SettlementLoopReset, "Narrative.Act1.SettlementLoopReset");
+    UE_DEFINE_GAMEPLAY_TAG(StoryAct4NhalDiscovered, "Story.Act4.NhalDiscovered");
+    UE_DEFINE_GAMEPLAY_TAG(StoryAct4DeadChildProphecy, "Story.Act4.DeadChildProphecy");
+    UE_DEFINE_GAMEPLAY_TAG(StoryAct4CompanionBetrayalAverted, "Story.Act4.CompanionBetrayalAverted");
+    UE_DEFINE_GAMEPLAY_TAG(StoryAct5ArchiveReached, "Story.Act5.ArchiveReached");
+    UE_DEFINE_GAMEPLAY_TAG(StoryAct5ArchiveRequest, "Story.Act5.ArchiveRequest");
+    UE_DEFINE_GAMEPLAY_TAG(StoryAct6UnwrittenSeaSailed, "Story.Act6.UnwrittenSeaSailed");
+    UE_DEFINE_GAMEPLAY_TAG(StoryAct6FirstArchivistDefeated, "Story.Act6.FirstArchivistDefeated");
+    UE_DEFINE_GAMEPLAY_TAG(StoryAct6TrueIdentityRevealed, "Story.Act6.TrueIdentityRevealed");
 }
