@@ -48,6 +48,7 @@ The codebase features an end-to-end, deterministic 8-phase polish across all gam
 | **Phase 6** | **Comprehensive Automation & Invariant Validation** | `EdrathPreAlphaAutomationTest.cpp`, `CHANGELOG.md` | Full Automation Test Suite |
 | **Phase 7** | **Act 2 Veyl Court & Async Telemetry** | `AAct2VeylCourtDirector`, `UEdrathTelemetrySubsystem` | `FEdrathAct2VeylCourtInvestigationTest`, `FEdrathTelemetryAndCrashReportingTest` |
 | **Phase 8** | **Act 3 Hollowgreen & Emergency VRAM Recovery** | `AAct3HollowgreenDirector`, `AMemoryAnchorActor` | `FEdrathAct3HollowgreenMemoryRealmTest`, `FEdrathEnginePerformanceOptimizationTest` |
+| **Phase 9** | **Acts 4–6 Directors, Climax Boss & Companion AI** | `AAct4NhalDirector`, `AAct5CrownOfWinterDirector`, `AAct6UnwrittenSeaDirector`, `AFirstArchivistBossCharacter`, `AEdrathCompanionAIController` | `FEdrathAct4NhalSubterraneanMetropolisTest`, `FEdrathAct5CrownOfWinterConsciousArchiveTest`, `FEdrathAct6UnwrittenSeaAndFirstArchivistTest`, `FEdrathCompanionAutonomousAIControllerTest` |
 
 ---
 

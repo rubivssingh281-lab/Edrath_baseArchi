@@ -9,7 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
-- Act 4 Nhal subterranean Metropolis World Partition grid.
+
+## [0.10.0] - 2026-11-20
+
+### Added
+- **Act 4 Subterranean Metropolis of Nhal Orchestration**:
+  - Implemented `AAct4NhalDirector` (`Source/Edrath/Public/World/Act4NhalDirector.h`, `Source/Edrath/Private/World/Act4NhalDirector.cpp`) managing faction mediation between Restorationists and Revanchists, future-dead companion echo manifestations, dead child prophecy, ally betrayal defusal, and Twist 3 ledger revelation.
+- **Act 5 The Crown of Winter & Conscious Archive**:
+  - Implemented `AAct5CrownOfWinterDirector` (`Source/Edrath/Public/World/Act5CrownOfWinterDirector.h`, `Source/Edrath/Private/World/Act5CrownOfWinterDirector.cpp`) orchestrating mountain traversal, time-dilated chamber exterior aging simulation (`SimulateInteriorTimeDilation`), Conscious Archive infiltration, dialogue where the machine asks to die (`Story.Act5.ArchiveRequest`), and ontological stance commitment.
+- **Act 6 The Unwritten Sea & The First Archivist Climax Boss**:
+  - Implemented `AAct6UnwrittenSeaDirector` (`Source/Edrath/Public/World/Act6UnwrittenSeaDirector.h`, `Source/Edrath/Private/World/Act6UnwrittenSeaDirector.cpp`) coordinating sky-ocean navigation, dynamic island materialization of unchosen paths via `AUnwrittenIslandSpawner`, former selves confrontation, and evaluation of the 4 Endings.
+  - Implemented `AFirstArchivistBossCharacter` (`Source/Edrath/Public/Character/FirstArchivistBossCharacter.h`, `Source/Edrath/Private/Character/FirstArchivistBossCharacter.cpp`) featuring 3-phase combat, crystalline time-archive armor, timeline shield shatter mechanics via Black Clock Echo strikes, and possibility collapse novae.
+- **Autonomous Companion AI Controller**:
+  - Implemented `AEdrathCompanionAIController` (`Source/Edrath/Public/Character/EdrathCompanionAIController.h`, `Source/Edrath/Private/Character/EdrathCompanionAIController.cpp`) adapting companion follow behaviors, combat support anticipation from Senn's 0.8s foresight warnings, and suspicion escalation leading to defection under excessive Black Clock usage.
+- **Automated Verification Suite Expansion (4 New Suites)**:
+  - Added `FEdrathAct4NhalSubterraneanMetropolisTest` verifying faction mediation, dead child prophecy, companion betrayal resolution, and Twist 3 ledger discovery.
+  - Added `FEdrathAct5CrownOfWinterConsciousArchiveTest` verifying time dilation math, Conscious Archive infiltration, dialogue request, and ontological commitment.
+  - Added `FEdrathAct6UnwrittenSeaAndFirstArchivistTest` verifying sky ocean traversal, former selves confrontation, multi-phase First Archivist boss battle, and ending resolution.
+  - Added `FEdrathCompanionAutonomousAIControllerTest` verifying companion follow mode, foresight reaction, and Black Clock suspicion escalation.
 
 ## [0.9.0] - 2026-11-17
 

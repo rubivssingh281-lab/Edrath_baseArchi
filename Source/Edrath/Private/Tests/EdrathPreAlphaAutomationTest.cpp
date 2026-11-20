@@ -44,6 +44,11 @@
 #include "World/Act1BattlefieldLevelScriptActor.h"
 #include "World/Act2VeylCourtDirector.h"
 #include "World/Act3HollowgreenDirector.h"
+#include "World/Act4NhalDirector.h"
+#include "World/Act5CrownOfWinterDirector.h"
+#include "World/Act6UnwrittenSeaDirector.h"
+#include "Character/FirstArchivistBossCharacter.h"
+#include "Character/EdrathCompanionAIController.h"
 #include "Narrative/MemoryAnchorActor.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -1781,6 +1786,257 @@ bool FEdrathEnginePerformanceOptimizationTest::RunTest(const FString&)
         HardwareOpt->ApplyThermalMitigation(EEdrathThermalStatus::Nominal);
         TestEqual(TEXT("Thermal status successfully restored to Nominal"),
             HardwareOpt->GetCurrentThermalStatus(), EEdrathThermalStatus::Nominal);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathAct4NhalSubterraneanMetropolisTest,
+    "Edrath.Act4.NhalSubterraneanMetropolisAndProphecyTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathAct4NhalSubterraneanMetropolisTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    ANhalFactionManager* FactionManager = TestWorld->SpawnActor<ANhalFactionManager>();
+    AAct4NhalDirector* Act4Director = TestWorld->SpawnActor<AAct4NhalDirector>();
+
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("Faction manager must spawn"), FactionManager);
+    TestNotNull(TEXT("Act 4 director must spawn"), Act4Director);
+
+    if (Kael && FactionManager && Act4Director)
+    {
+        // 1. Initialize Act 4
+        Act4Director->InitializeAct4(Kael, FactionManager);
+        TestEqual(TEXT("Kael region set to Nhal"), Kael->CurrentRegion, EEdrathRegion::Nhal);
+        TestEqual(TEXT("Act 4 state is InvestigatingFactionStrife"),
+            Act4Director->GetAct4State(), EAct4NhalState::InvestigatingFactionStrife);
+
+        // 2. Dead Child Prophecy
+        const FText Prophecy = FText::FromString(TEXT("You will reach the conscious vault, and dismantle the dawn."));
+        const bool bProphecyTriggered = Act4Director->TriggerDeadChildProphecy(Prophecy);
+        TestTrue(TEXT("Prophecy successfully registered"), bProphecyTriggered);
+        TestTrue(TEXT("Prophecy received flag true"), Act4Director->HasReceivedProphecy());
+        TestEqual(TEXT("State transitioned to DeadChildProphecyReceived"),
+            Act4Director->GetAct4State(), EAct4NhalState::DeadChildProphecyReceived);
+
+        // 3. Companion Betrayal Resolution
+        const bool bBetrayalResolved = Act4Director->ResolveCompanionBetrayal(TEXT("Ilyra"), true);
+        TestTrue(TEXT("Companion betrayal averted successfully"), bBetrayalResolved);
+        TestTrue(TEXT("Betrayal averted flag is true"), Act4Director->IsBetrayalAverted());
+        TestEqual(TEXT("State transitioned to CompanionBetrayalAverted"),
+            Act4Director->GetAct4State(), EAct4NhalState::CompanionBetrayalAverted);
+
+        // 4. Twist 3 Ledger Revelation
+        const bool bLedgerRevealed = Act4Director->UncoverArchiveLedgerTwist();
+        TestTrue(TEXT("Archive ledger twist uncovered"), bLedgerRevealed);
+        TestTrue(TEXT("Ledger twist flag is true"), Act4Director->IsLedgerTwistRevealed());
+        TestTrue(TEXT("Act 4 is completed"), Act4Director->IsAct4Completed());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathAct5CrownOfWinterConsciousArchiveTest,
+    "Edrath.Act5.CrownOfWinterTimeDilationAndConsciousArchiveTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathAct5CrownOfWinterConsciousArchiveTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    AEdrathInteriorTransitionVolume* ChamberVolume = TestWorld->SpawnActor<AEdrathInteriorTransitionVolume>();
+    AAct5CrownOfWinterDirector* Act5Director = TestWorld->SpawnActor<AAct5CrownOfWinterDirector>();
+
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("Transition volume must spawn"), ChamberVolume);
+    TestNotNull(TEXT("Act 5 director must spawn"), Act5Director);
+
+    if (Kael && ChamberVolume && Act5Director)
+    {
+        ChamberVolume->bIsCrownOfWinterTimeDilatedInterior = true;
+        ChamberVolume->SimulatedDaysPerInteriorSecond = 365.0f;
+
+        // 1. Initialize Act 5
+        Act5Director->InitializeAct5(Kael, ChamberVolume);
+        TestEqual(TEXT("Kael region set to CrownOfWinter"), Kael->CurrentRegion, EEdrathRegion::CrownOfWinter);
+        TestEqual(TEXT("Kael archetype set to TimeArchivist_Act5"),
+            Kael->EquippedLifeEchoArchetype, EKaelLifeEchoArchetype::TimeArchivist_Act5);
+
+        // 2. Time Dilation Simulation
+        const int32 SimulatedDays = Act5Director->SimulateInteriorTimeDilation(2.0f);
+        TestTrue(TEXT("2 seconds inside equals at least 365 exterior days"), SimulatedDays >= 365);
+        TestEqual(TEXT("State transitioned to TimeDilatedChamberTraversed"),
+            Act5Director->GetAct5State(), EAct5CrownOfWinterState::TimeDilatedChamberTraversed);
+
+        // 3. Infiltrate Conscious Archive
+        const bool bInfiltrated = Act5Director->InfiltrateConsciousArchive();
+        TestTrue(TEXT("Archive infiltration succeeds"), bInfiltrated);
+        TestEqual(TEXT("State transitioned to ConsciousArchiveInfiltrated"),
+            Act5Director->GetAct5State(), EAct5CrownOfWinterState::ConsciousArchiveInfiltrated);
+
+        // 4. Archive Dialogue & Request to Die
+        const bool bDialogueConducted = Act5Director->ConductArchiveDialogue(true);
+        TestTrue(TEXT("Dialogue with Archive conducted"), bDialogueConducted);
+        TestTrue(TEXT("Archive request acknowledged"), Act5Director->HasAcknowledgedArchiveRequest());
+
+        // 5. Commit Ontological Choice
+        const bool bCommitted = Act5Director->CommitOntologicalChoice(true);
+        TestTrue(TEXT("Choice committed"), bCommitted);
+        TestTrue(TEXT("Act 5 is completed"), Act5Director->IsAct5Completed());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathAct6UnwrittenSeaAndFirstArchivistTest,
+    "Edrath.Act6.UnwrittenSeaAndFirstArchivistBossTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathAct6UnwrittenSeaAndFirstArchivistTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    AUnwrittenIslandSpawner* Spawner = TestWorld->SpawnActor<AUnwrittenIslandSpawner>();
+    AFirstArchivistBossCharacter* Boss = TestWorld->SpawnActor<AFirstArchivistBossCharacter>();
+    AAct6UnwrittenSeaDirector* Act6Director = TestWorld->SpawnActor<AAct6UnwrittenSeaDirector>();
+
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("Spawner must spawn"), Spawner);
+    TestNotNull(TEXT("Boss must spawn"), Boss);
+    TestNotNull(TEXT("Act 6 director must spawn"), Act6Director);
+
+    if (Kael && Spawner && Boss && Act6Director)
+    {
+        // 1. Initialize Act 6
+        Act6Director->InitializeAct6(Kael, Spawner);
+        TestEqual(TEXT("Kael region set to UnwrittenSea"), Kael->CurrentRegion, EEdrathRegion::UnwrittenSea);
+
+        // 2. Confront Former Selves
+        const bool bConfronted1 = Act6Director->ConfrontFormerSelf(EKaelLifeEchoArchetype::PlaguedHealer_Act3);
+        const bool bConfronted2 = Act6Director->ConfrontFormerSelf(EKaelLifeEchoArchetype::TyrantConqueror_Act3);
+        TestTrue(TEXT("Confronted first self"), bConfronted1);
+        TestTrue(TEXT("Confronted second self"), bConfronted2);
+        TestEqual(TEXT("Confronted selves count is 2"), Act6Director->GetConfrontedSelvesCount(), 2);
+
+        // 3. First Archivist Boss Battle Phases
+        Act6Director->InitiateFirstArchivistBattle(Boss);
+        TestEqual(TEXT("Boss initial phase is Phase 1"),
+            Boss->GetCurrentPhase(), EArchivistBossPhase::Phase1_EchoProjection);
+
+        // Damage Boss into Phase 2
+        Boss->ApplyBossDamage(400.0f, false);
+        TestEqual(TEXT("Boss transitioned to Phase 2 Crystalline Shield"),
+            Boss->GetCurrentPhase(), EArchivistBossPhase::Phase2_CrystallineShield);
+        TestTrue(TEXT("Shield is active in Phase 2"), Boss->IsShieldActive());
+
+        // Echo strike breaks crystalline shield
+        Boss->ApplyBossDamage(100.0f, true);
+        TestTrue(TEXT("Shield integrity reduced by Echo strike"), Boss->ShieldStability < 100.0f);
+
+        // Defeat Boss
+        Boss->ApplyBossDamage(1200.0f, true);
+        TestTrue(TEXT("Boss is defeated"), Boss->IsDefeated());
+
+        // Record defeat in Director
+        const bool bDefeatRecorded = Act6Director->RecordArchivistDefeated();
+        TestTrue(TEXT("Defeat recorded in director"), bDefeatRecorded);
+        TestTrue(TEXT("Archivist defeated flag true"), Act6Director->IsArchivistDefeated());
+
+        // 4. Select Final Ending
+        const EEdrathEndingType FinalEnding = Act6Director->SelectFinalEnding(EEdrathEndingType::MortalWorld);
+        TestEqual(TEXT("Resolved ending is MortalWorld"), FinalEnding, EEdrathEndingType::MortalWorld);
+        TestTrue(TEXT("Act 6 is completed"), Act6Director->IsAct6Completed());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathCompanionAutonomousAIControllerTest,
+    "Edrath.Companion.AutonomousAIControllerAndSuspicionTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathCompanionAutonomousAIControllerTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    AEdrathCompanionCharacter* Companion = TestWorld->SpawnActor<AEdrathCompanionCharacter>();
+    AEdrathCompanionAIController* AIController = TestWorld->SpawnActor<AEdrathCompanionAIController>();
+
+    TestNotNull(TEXT("Companion must spawn"), Companion);
+    TestNotNull(TEXT("AIController must spawn"), AIController);
+
+    if (Companion && AIController)
+    {
+        AIController->Possess(Companion);
+        TestEqual(TEXT("Controlled companion matches possessed pawn"),
+            AIController->GetCompanionCharacter(), Companion);
+
+        // 1. Initial State
+        TestEqual(TEXT("Initial behavior is FollowingHero"),
+            AIController->GetBehaviorMode(), ECompanionBehaviorMode::FollowingHero);
+
+        // 2. Foresight Reaction
+        AIController->ReactToForesightWarning(0.8f);
+        TestEqual(TEXT("Foresight triggers CombatSupport mode"),
+            AIController->GetBehaviorMode(), ECompanionBehaviorMode::CombatSupport);
+
+        // 3. Black Clock Usage Escalation
+        AIController->ReactToBlackClockUsage(45.0f);
+        TestTrue(TEXT("Suspicion escalated above 50"), AIController->GetCurrentSuspicion() >= 50.0f);
+        TestEqual(TEXT("Suspicion escalates behavior to SuspiciousObservation"),
+            AIController->GetBehaviorMode(), ECompanionBehaviorMode::SuspiciousObservation);
+
+        // Excessive clock abuse triggers hostile defection
+        AIController->ReactToBlackClockUsage(40.0f);
+        TestTrue(TEXT("Suspicion escalated above 85"), AIController->GetCurrentSuspicion() >= 85.0f);
+        TestEqual(TEXT("Excessive clock abuse triggers HostileDefection"),
+            AIController->GetBehaviorMode(), ECompanionBehaviorMode::HostileDefection);
     }
 
     TestWorld->DestroyWorld(false);
