@@ -20,6 +20,10 @@ void UEdrathAudioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     ClockAudioState.SpatialSpreadRadius = 450.0f;
     ClockAudioState.DistortionDisturbance = 0.0f;
     ClockAudioState.SternumWorldLocation = FVector::ZeroVector;
+
+    LastLeftFootTimestampSeconds = -1.0f;
+    LastRightFootTimestampSeconds = -1.0f;
+    FootstepRefractoryWindowSeconds = 0.085f;
 }
 
 void UEdrathAudioSubsystem::Deinitialize()
@@ -39,7 +43,6 @@ void UEdrathAudioSubsystem::SetCameraPerspectiveAudioMode(EEdrathCameraMode Came
 {
     LastCameraMode = CameraMode;
 
-    // Do not override supernatural timeline distortions or conscious archives
     if (ActiveProfile != EEdrathAcousticProfile::TimelineDistortion &&
         ActiveProfile != EEdrathAcousticProfile::ConsciousArchive)
     {
@@ -216,6 +219,104 @@ FEdrathFootstepAudioParams UEdrathAudioSubsystem::ProcessFootstepAudio(EEdrathSu
     // Natural acoustic footstep humanization offset
     const float SubtleHumanization = bIsLeftFoot ? 0.985f : 1.015f;
     Params.PitchMultiplier *= SubtleHumanization;
+
+    LastFootstepParams = Params;
+    return Params;
+}
+
+float UEdrathAudioSubsystem::CalculateGaitVolumeMultiplier(EEdrathLocomotionGait Gait, float GroundSpeed) const
+{
+    switch (Gait)
+    {
+        case EEdrathLocomotionGait::Sneak:
+            return FMath::Clamp(0.25f + (GroundSpeed / 200.0f) * 0.15f, 0.20f, 0.45f);
+
+        case EEdrathLocomotionGait::Walk:
+            return FMath::Clamp(0.70f + (GroundSpeed / 350.0f) * 0.30f, 0.60f, 1.00f);
+
+        case EEdrathLocomotionGait::Jog:
+            return FMath::Clamp(0.95f + ((GroundSpeed - 350.0f) / 300.0f) * 0.25f, 0.90f, 1.20f);
+
+        case EEdrathLocomotionGait::Sprint:
+            return FMath::Clamp(1.20f + ((GroundSpeed - 600.0f) / 400.0f) * 0.35f, 1.15f, 1.55f);
+
+        case EEdrathLocomotionGait::DodgeRoll:
+            return 1.40f;
+
+        default:
+            return 1.0f;
+    }
+}
+
+bool UEdrathAudioSubsystem::CheckFootstepRefractoryAllowed(bool bIsLeftFoot, float CurrentWorldTimeSeconds) const
+{
+    const float LastTimestamp = bIsLeftFoot ? LastLeftFootTimestampSeconds : LastRightFootTimestampSeconds;
+    if (LastTimestamp < 0.0f)
+    {
+        return true;
+    }
+    return (CurrentWorldTimeSeconds - LastTimestamp) >= FootstepRefractoryWindowSeconds;
+}
+
+FEdrathFootstepAudioParams UEdrathAudioSubsystem::ProcessLocomotionFootstepAudio(
+    EEdrathSurfaceType SurfaceType,
+    const FVector& ImpactPoint,
+    bool bIsLeftFoot,
+    float GroundSpeed,
+    EEdrathLocomotionGait Gait,
+    float CurrentWorldTimeSeconds)
+{
+    const bool bAllowed = CheckFootstepRefractoryAllowed(bIsLeftFoot, CurrentWorldTimeSeconds);
+    if (!bAllowed)
+    {
+        FEdrathFootstepAudioParams SuppressedParams = LastFootstepParams;
+        SuppressedParams.VolumeMultiplier = 0.0f;
+        return SuppressedParams;
+    }
+
+    if (bIsLeftFoot)
+    {
+        LastLeftFootTimestampSeconds = CurrentWorldTimeSeconds;
+    }
+    else
+    {
+        LastRightFootTimestampSeconds = CurrentWorldTimeSeconds;
+    }
+
+    FEdrathFootstepAudioParams Params = ProcessFootstepAudio(SurfaceType, ImpactPoint, bIsLeftFoot);
+    const float GaitVolume = CalculateGaitVolumeMultiplier(Gait, GroundSpeed);
+    Params.VolumeMultiplier *= GaitVolume;
+
+    if (Gait == EEdrathLocomotionGait::DodgeRoll)
+    {
+        switch (SurfaceType)
+        {
+            case EEdrathSurfaceType::DirtMud:
+                Params.AudioCueTag = FName(TEXT("Footstep_Slide_Mud"));
+                break;
+            case EEdrathSurfaceType::AshenSand:
+                Params.AudioCueTag = FName(TEXT("Footstep_Slide_Ash"));
+                break;
+            case EEdrathSurfaceType::DeepSnow:
+                Params.AudioCueTag = FName(TEXT("Footstep_Slide_Snow"));
+                break;
+            case EEdrathSurfaceType::Stone:
+            default:
+                Params.AudioCueTag = FName(TEXT("Footstep_Slide_Stone"));
+                break;
+        }
+        Params.ResonanceDamping = 0.85f;
+        Params.PitchMultiplier *= 0.90f;
+    }
+    else if (Gait == EEdrathLocomotionGait::Sprint)
+    {
+        Params.PitchMultiplier *= 1.05f;
+    }
+    else if (Gait == EEdrathLocomotionGait::Sneak)
+    {
+        Params.PitchMultiplier *= 0.95f;
+        Params.ResonanceDamping = FMath::Min(Params.ResonanceDamping + 0.30f, 1.0f);
+    }
 
     LastFootstepParams = Params;
     return Params;

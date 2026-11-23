@@ -2239,6 +2239,37 @@ bool FEdrathAudioSubsystemPerspectiveAndSurfaceTest::RunTest(const FString&)
         FEdrathFootstepAudioParams FleshImpact = AudioSubsystem->ProcessFootstepAudio(EEdrathSurfaceType::FleshCorpses, FVector::ZeroVector, true);
         TestEqual(TEXT("Flesh corpses cue tag must match"), FleshImpact.AudioCueTag, FName(TEXT("Footstep_Flesh")));
         TestTrue(TEXT("Flesh footstep volume must be boosted for visceral squelch"), FleshImpact.VolumeMultiplier >= 1.10f);
+
+        // 6. Verify Velocity & Gait Dynamic Footstep Modulation
+        const float SneakVol = AudioSubsystem->CalculateGaitVolumeMultiplier(EEdrathLocomotionGait::Sneak, 100.0f);
+        TestTrue(TEXT("Sneak volume multiplier must be hushed (< 0.50x)"), SneakVol <= 0.50f);
+
+        const float SprintVol = AudioSubsystem->CalculateGaitVolumeMultiplier(EEdrathLocomotionGait::Sprint, 700.0f);
+        TestTrue(TEXT("Sprint volume multiplier must be elevated (> 1.20x)"), SprintVol >= 1.20f);
+
+        const float DodgeVol = AudioSubsystem->CalculateGaitVolumeMultiplier(EEdrathLocomotionGait::DodgeRoll, 850.0f);
+        TestEqual(TEXT("Dodge roll volume multiplier must be 1.40x"), DodgeVol, 1.40f);
+
+        // 7. Verify Refractory Window Suppression
+        FEdrathFootstepAudioParams InitialStep = AudioSubsystem->ProcessLocomotionFootstepAudio(
+            EEdrathSurfaceType::Stone, FVector::ZeroVector, true, 300.0f, EEdrathLocomotionGait::Walk, 10.0f);
+        TestTrue(TEXT("Initial step must have positive volume"), InitialStep.VolumeMultiplier > 0.0f);
+
+        // Step attempted only 20ms later on same foot (within 85ms refractory window)
+        FEdrathFootstepAudioParams RapidSpamStep = AudioSubsystem->ProcessLocomotionFootstepAudio(
+            EEdrathSurfaceType::Stone, FVector::ZeroVector, true, 300.0f, EEdrathLocomotionGait::Walk, 10.020f);
+        TestEqual(TEXT("Rapidly spammed footstep within refractory window must be completely muted"), RapidSpamStep.VolumeMultiplier, 0.0f);
+
+        // Step on other foot (right) at 10.020s should NOT be blocked by left foot's refractory window
+        FEdrathFootstepAudioParams RightFootStep = AudioSubsystem->ProcessLocomotionFootstepAudio(
+            EEdrathSurfaceType::Stone, FVector::ZeroVector, false, 300.0f, EEdrathLocomotionGait::Walk, 10.020f);
+        TestTrue(TEXT("Opposite foot must not be blocked by left foot refractory window"), RightFootStep.VolumeMultiplier > 0.0f);
+
+        // 8. Verify Dodge Roll Slide Foley Routing
+        FEdrathFootstepAudioParams DodgeSlide = AudioSubsystem->ProcessLocomotionFootstepAudio(
+            EEdrathSurfaceType::DirtMud, FVector::ZeroVector, true, 800.0f, EEdrathLocomotionGait::DodgeRoll, 10.150f);
+        TestEqual(TEXT("Dodge roll on mud must select Footstep_Slide_Mud cue tag"), DodgeSlide.AudioCueTag, FName(TEXT("Footstep_Slide_Mud")));
+        TestEqual(TEXT("Dodge roll must have heavy resonance damping (0.85)"), DodgeSlide.ResonanceDamping, 0.85f);
     }
 
     TestWorld->DestroyWorld(false);

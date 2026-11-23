@@ -21,6 +21,20 @@ enum class EEdrathAcousticProfile : uint8
 };
 
 /**
+ * EEdrathLocomotionGait
+ * Character movement intensity states driving acoustic footstep attenuation and cadence.
+ */
+UENUM(BlueprintType)
+enum class EEdrathLocomotionGait : uint8
+{
+    Sneak       UMETA(DisplayName = "Sneak / Crouch"),
+    Walk        UMETA(DisplayName = "Walk / Deliberate"),
+    Jog         UMETA(DisplayName = "Jog / Standard"),
+    Sprint      UMETA(DisplayName = "Sprint / Panic"),
+    DodgeRoll   UMETA(DisplayName = "Dodge Roll / Tactical Slide")
+};
+
+/**
  * FEdrathAcousticSettings
  * Concrete filter, reverberation, and spatialization parameters applied to master audio bus.
  */
@@ -104,7 +118,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBlackClockAudioTempoChanged, flo
 /**
  * UEdrathAudioSubsystem
  * GameInstance subsystem governing dual-perspective acoustic profiles,
- * physical surface footstep routing, and Black Clock sternum tempo acceleration.
+ * physical surface footstep routing, Black Clock sternum tempo acceleration,
+ * and velocity-modulated locomotion cadence.
  */
 UCLASS()
 class EDRATH_API UEdrathAudioSubsystem : public UGameInstanceSubsystem
@@ -143,9 +158,27 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|Audio")
     float CalculateBlackClockBPM(float StabilityRatio) const;
 
-    /** Processes footstep audio parameters given surface type and left/right foot. */
+    /** Processes base footstep audio parameters given surface type and left/right foot. */
     UFUNCTION(BlueprintCallable, Category="Edrath|Audio")
     FEdrathFootstepAudioParams ProcessFootstepAudio(EEdrathSurfaceType SurfaceType, const FVector& ImpactPoint, bool bIsLeftFoot);
+
+    /** Processes velocity- and gait-modulated footstep audio with refractory window filtering. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Audio")
+    FEdrathFootstepAudioParams ProcessLocomotionFootstepAudio(
+        EEdrathSurfaceType SurfaceType,
+        const FVector& ImpactPoint,
+        bool bIsLeftFoot,
+        float GroundSpeed,
+        EEdrathLocomotionGait Gait,
+        float CurrentWorldTimeSeconds);
+
+    /** Calculates dynamic volume multiplier for gait and speed. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Audio")
+    float CalculateGaitVolumeMultiplier(EEdrathLocomotionGait Gait, float GroundSpeed) const;
+
+    /** Evaluates whether footstep sound is allowed or suppressed by refractory timestamp window. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Audio")
+    bool CheckFootstepRefractoryAllowed(bool bIsLeftFoot, float CurrentWorldTimeSeconds) const;
 
     /** Responds to timeline state shifts (e.g. Present vs Rejected vs Memory Reconstruction). */
     UFUNCTION(BlueprintCallable, Category="Edrath|Audio")
@@ -181,4 +214,8 @@ private:
 
     UPROPERTY()
     FEdrathFootstepAudioParams LastFootstepParams;
+
+    float LastLeftFootTimestampSeconds = -1.0f;
+    float LastRightFootTimestampSeconds = -1.0f;
+    float FootstepRefractoryWindowSeconds = 0.085f;
 };
