@@ -50,6 +50,11 @@
 #include "Character/FirstArchivistBossCharacter.h"
 #include "Character/EdrathCompanionAIController.h"
 #include "Narrative/MemoryAnchorActor.h"
+#include "World/WeddingAltarActor.h"
+#include "World/BuriedFutureGraveActor.h"
+#include "World/VillageVotingShrineActor.h"
+#include "World/DragonMemoryHoardActor.h"
+#include "World/LastHonestKingMonumentActor.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -2037,6 +2042,91 @@ bool FEdrathCompanionAutonomousAIControllerTest::RunTest(const FString&)
         TestTrue(TEXT("Suspicion escalated above 85"), AIController->GetCurrentSuspicion() >= 85.0f);
         TestEqual(TEXT("Excessive clock abuse triggers HostileDefection"),
             AIController->GetBehaviorMode(), ECompanionBehaviorMode::HostileDefection);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathSideQuestsWorldActorsVerificationTest,
+    "Edrath.Quests.SideQuestsWorldActorsAndConsequencesTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathSideQuestsWorldActorsVerificationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    // 1. Wedding Altar Actor Verification
+    AWeddingAltarActor* WeddingAltar = TestWorld->SpawnActor<AWeddingAltarActor>();
+    TestNotNull(TEXT("Wedding altar must spawn"), WeddingAltar);
+    if (WeddingAltar)
+    {
+        const bool bResolved = WeddingAltar->ExecuteWeddingChoice(false);
+        TestTrue(TEXT("Wedding choice execution succeeds"), bResolved);
+        TestTrue(TEXT("Wedding is marked resolved"), WeddingAltar->IsWeddingResolved());
+        TestFalse(TEXT("Timelines were not merged (severed echo)"), WeddingAltar->WereTimelinesMerged());
+    }
+
+    // 2. Buried Future Grave Actor Verification
+    ABuriedFutureGraveActor* FutureGrave = TestWorld->SpawnActor<ABuriedFutureGraveActor>();
+    TestNotNull(TEXT("Buried future grave must spawn"), FutureGrave);
+    if (FutureGrave)
+    {
+        TestFalse(TEXT("Grave starts unopened"), FutureGrave->IsExhumed());
+        const bool bExhumed = FutureGrave->ExhumeFutureGrave(true);
+        TestTrue(TEXT("Exhumation succeeds"), bExhumed);
+        TestTrue(TEXT("Grave is marked exhumed"), FutureGrave->IsExhumed());
+        TestTrue(TEXT("Loving father anchor committed"), FutureGrave->IsLovingFatherAnchor());
+    }
+
+    // 3. Village Voting Shrine Actor Verification
+    AVillageVotingShrineActor* VotingShrine = TestWorld->SpawnActor<AVillageVotingShrineActor>();
+    TestNotNull(TEXT("Village voting shrine must spawn"), VotingShrine);
+    if (VotingShrine)
+    {
+        TestFalse(TEXT("Ledger uninspected initially"), VotingShrine->IsLedgerInspected());
+        VotingShrine->InspectVotingLedger();
+        TestTrue(TEXT("Ledger is inspected"), VotingShrine->IsLedgerInspected());
+
+        const bool bVoteDone = VotingShrine->CastFinalVote(true, true);
+        TestTrue(TEXT("Vote successfully resolved"), bVoteDone);
+        TestTrue(TEXT("Vote marked resolved"), VotingShrine->IsVoteResolved());
+    }
+
+    // 4. Dragon Memory Hoard Actor Verification
+    ADragonMemoryHoardActor* DragonHoard = TestWorld->SpawnActor<ADragonMemoryHoardActor>();
+    TestNotNull(TEXT("Dragon memory hoard must spawn"), DragonHoard);
+    if (DragonHoard)
+    {
+        TestFalse(TEXT("Dragon is not apocalyptic initially"), DragonHoard->IsDragonApocalyptic());
+        const bool bHoardResolved = DragonHoard->ResolveHoardChoice(true);
+        TestTrue(TEXT("Hoard choice resolved"), bHoardResolved);
+        TestTrue(TEXT("Memories returned"), DragonHoard->WereMemoriesReturned());
+        TestTrue(TEXT("Dragon awakened to apocalyptic state"), DragonHoard->IsDragonApocalyptic());
+    }
+
+    // 5. Last Honest King Monument Actor Verification
+    ALastHonestKingMonumentActor* KingMonument = TestWorld->SpawnActor<ALastHonestKingMonumentActor>();
+    TestNotNull(TEXT("King monument must spawn"), KingMonument);
+    if (KingMonument)
+    {
+        TestFalse(TEXT("Plaque uninspected initially"), KingMonument->IsPlaqueInspected());
+        KingMonument->InspectConfessionPlaque();
+        TestTrue(TEXT("Plaque inspected"), KingMonument->IsPlaqueInspected());
+
+        const bool bMonumentDone = KingMonument->ResolveRoyalConfession(true);
+        TestTrue(TEXT("Monarch confession resolved"), bMonumentDone);
+        TestTrue(TEXT("True war criminal exposed"), KingMonument->WasTrueCriminalExposed());
     }
 
     TestWorld->DestroyWorld(false);
