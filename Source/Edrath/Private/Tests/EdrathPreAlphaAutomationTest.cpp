@@ -56,6 +56,7 @@
 #include "World/DragonMemoryHoardActor.h"
 #include "World/LastHonestKingMonumentActor.h"
 #include "Core/EdrathAudioSubsystem.h"
+#include "World/EdrathWeatherSubsystem.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -2270,6 +2271,91 @@ bool FEdrathAudioSubsystemPerspectiveAndSurfaceTest::RunTest(const FString&)
             EEdrathSurfaceType::DirtMud, FVector::ZeroVector, true, 800.0f, EEdrathLocomotionGait::DodgeRoll, 10.150f);
         TestEqual(TEXT("Dodge roll on mud must select Footstep_Slide_Mud cue tag"), DodgeSlide.AudioCueTag, FName(TEXT("Footstep_Slide_Mud")));
         TestEqual(TEXT("Dodge roll must have heavy resonance damping (0.85)"), DodgeSlide.ResonanceDamping, 0.85f);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathWeatherAndEnvironmentalHazardTest,
+    "Edrath.World.WeatherAndEnvironmentalHazardTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathWeatherAndEnvironmentalHazardTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathWeatherSubsystem* WeatherSubsystem = GameInstance->GetSubsystem<UEdrathWeatherSubsystem>();
+    TestNotNull(TEXT("UEdrathWeatherSubsystem must instantiate"), WeatherSubsystem);
+
+    UEdrathAudioSubsystem* AudioSubsystem = GameInstance->GetSubsystem<UEdrathAudioSubsystem>();
+    TestNotNull(TEXT("UEdrathAudioSubsystem must instantiate for weather coupling"), AudioSubsystem);
+
+    if (WeatherSubsystem)
+    {
+        // 1. Verify Default Initial Weather State
+        TestEqual(TEXT("Initial weather must be ClearChronalSky"),
+            WeatherSubsystem->GetActiveWeatherType(), EEdrathWeatherType::ClearChronalSky);
+        TestEqual(TEXT("Clear sky visibility distance must be 14000 units"),
+            WeatherSubsystem->GetActiveHazardState().VisibilityDistanceUnits, 14000.0f);
+        TestEqual(TEXT("Clear sky movement speed multiplier must be 1.0"),
+            WeatherSubsystem->GetActiveHazardState().MovementSpeedMultiplier, 1.0f);
+
+        // 2. Canonical Act 5 Crown of Winter Blizzard Verification
+        WeatherSubsystem->SetCanonicalRegionWeather(EEdrathRegion::CrownOfWinter);
+        TestEqual(TEXT("Crown of Winter canonical weather must be CrownBlizzard"),
+            WeatherSubsystem->GetActiveWeatherType(), EEdrathWeatherType::CrownBlizzard);
+        TestEqual(TEXT("Blizzard visibility distance must drop to 1800 units"),
+            WeatherSubsystem->GetActiveHazardState().VisibilityDistanceUnits, 1800.0f);
+        TestEqual(TEXT("Blizzard movement speed penalty must be 0.70x"),
+            WeatherSubsystem->GetActiveHazardState().MovementSpeedMultiplier, 0.70f);
+        TestEqual(TEXT("Blizzard frost glaze intensity must be 0.90"),
+            WeatherSubsystem->GetActiveHazardState().FrostGlazeIntensity, 0.90f);
+
+        // 3. Canonical Act 3 Hollowgreen Spore Rain Verification
+        WeatherSubsystem->SetCanonicalRegionWeather(EEdrathRegion::Hollowgreen);
+        TestEqual(TEXT("Hollowgreen canonical weather must be HollowgreenSporeRain"),
+            WeatherSubsystem->GetActiveWeatherType(), EEdrathWeatherType::HollowgreenSporeRain);
+        TestEqual(TEXT("Spore rain toxicity rate must be 1.20"),
+            WeatherSubsystem->GetActiveHazardState().SporeToxicityRate, 1.20f);
+
+        // 4. Act 4 Subterranean Geothermal Steam & Audio Subsystem Coupling
+        WeatherSubsystem->SetCanonicalRegionWeather(EEdrathRegion::Nhal);
+        TestEqual(TEXT("Nhal canonical weather must be NhalGeothermalSteam"),
+            WeatherSubsystem->GetActiveWeatherType(), EEdrathWeatherType::NhalGeothermalSteam);
+        if (AudioSubsystem)
+        {
+            TestEqual(TEXT("Geothermal steam in Nhal must switch audio profile to DeepSubterranean"),
+                AudioSubsystem->GetActiveAcousticProfile(), EEdrathAcousticProfile::DeepSubterranean);
+        }
+
+        // 5. Thermal Throttling Particle Scaling Verification
+        // Reset to Crown Blizzard (1.5x base particle spawn rate)
+        WeatherSubsystem->SetActiveWeather(EEdrathWeatherType::CrownBlizzard);
+        const int32 BaseParticles = 1000;
+
+        // Nominal thermal status (1.0x thermal scale -> 1500 particles)
+        WeatherSubsystem->ApplyThermalStatusToWeather(EEdrathThermalStatus::Nominal);
+        const int32 NominalCount = WeatherSubsystem->CalculateThermalScaledParticleCount(BaseParticles);
+        TestEqual(TEXT("Nominal thermal status must spawn 1500 particles for blizzard"), NominalCount, 1500);
+
+        // Critical thermal status (0.25x thermal scale -> 375 particles)
+        WeatherSubsystem->ApplyThermalStatusToWeather(EEdrathThermalStatus::Critical);
+        const int32 CriticalCount = WeatherSubsystem->CalculateThermalScaledParticleCount(BaseParticles);
+        TestEqual(TEXT("Critical thermal mitigation must throttle particle count to 375"), CriticalCount, 375);
     }
 
     TestWorld->DestroyWorld(false);
