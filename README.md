@@ -34,9 +34,9 @@ To clean transient build packages and reclaim 20-50GB on 512GB laptop drives:
 
 ---
 
-## 🏗️ 8-Phase Master Polish Architecture
+## 🏗️ 12-Phase Master Polish Architecture
 
-The codebase features an end-to-end, deterministic 8-phase polish across all gameplay, graphics, memory, and narrative subsystems:
+The codebase features an end-to-end, deterministic 12-phase polish across all gameplay, graphics, memory, and narrative subsystems:
 
 | Phase | Subsystem & Technical Scope | Key C++ Classes & Shaders | Automated Verification Test |
 | :--- | :--- | :--- | :--- |
@@ -50,6 +50,8 @@ The codebase features an end-to-end, deterministic 8-phase polish across all gam
 | **Phase 8** | **Act 3 Hollowgreen & Emergency VRAM Recovery** | `AAct3HollowgreenDirector`, `AMemoryAnchorActor` | `FEdrathAct3HollowgreenMemoryRealmTest`, `FEdrathEnginePerformanceOptimizationTest` |
 | **Phase 9** | **Acts 4–6 Directors, Climax Boss & Companion AI** | `AAct4NhalDirector`, `AAct5CrownOfWinterDirector`, `AAct6UnwrittenSeaDirector`, `AFirstArchivistBossCharacter`, `AEdrathCompanionAIController` | `FEdrathAct4NhalSubterraneanMetropolisTest`, `FEdrathAct5CrownOfWinterConsciousArchiveTest`, `FEdrathAct6UnwrittenSeaAndFirstArchivistTest`, `FEdrathCompanionAutonomousAIControllerTest` |
 | **Phase 10** | **Side Quest World Actors & Dual-Perspective Audio Subsystem** | `AWeddingAltarActor`, `ABuriedFutureGraveActor`, `AVillageVotingShrineActor`, `ADragonMemoryHoardActor`, `ALastHonestKingMonumentActor`, `UEdrathAudioSubsystem` | `FEdrathSideQuestsWorldActorsVerificationTest`, `FEdrathAudioSubsystemPerspectiveAndSurfaceTest` |
+| **Phase 11** | **Regional Weather Hazards & Thermal Particle Scaling** | `UEdrathWeatherSubsystem`, `UEdrathHardwareOptimizationSubsystem` | `FEdrathWeatherAndEnvironmentalHazardTest` |
+| **Phase 12** | **Forensic Clue Matrix & Save State Serialization** | `UEdrathForensicSubsystem`, `UEdrathSaveGame` | `FEdrathForensicSubsystemClueMatrixTest` |
 
 ---
 

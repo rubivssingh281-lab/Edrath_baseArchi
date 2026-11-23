@@ -69,4 +69,10 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Narrative")
     bool bUnlockedFourthPath = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Forensics")
+    TArray<FGameplayTag> DiscoveredClueTags;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Forensics")
+    TArray<FGameplayTag> ResolvedBreakthroughTags;
 };

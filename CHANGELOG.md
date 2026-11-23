@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
 
+## [0.12.0] - 2026-11-23
+
+### Added
+- **Velocity-Modulated Locomotion Audio & Refractory Filtering**:
+  - Enhanced `UEdrathAudioSubsystem` with `CalculateGaitVolumeMultiplier` dynamically attenuating footstep volume from sneak (0.25x-0.45x) to sprint (1.20x-1.55x) and dodge roll (1.40x).
+  - Added timestamp refractory gate (85ms per foot bone) suppressing rapid footstep spam to eliminate audio bus clipping and phase cancellation during high-velocity dodge rolls.
+  - Added tactical dodge roll slide Foley routing with high-friction drag sound tags (`Footstep_Slide_Stone`, `Footstep_Slide_Mud`, `Footstep_Slide_Snow`, `Footstep_Slide_Ash`).
+- **Dynamic Regional Weather & Environmental Hazard Subsystem**:
+  - Implemented `UEdrathWeatherSubsystem` (`Source/Edrath/Public/World/EdrathWeatherSubsystem.h`, `Source/Edrath/Private/World/EdrathWeatherSubsystem.cpp`) managing canonical atmospheric conditions across all 6 Acts (`ClearChronalSky`, `AshenChronalStorm`, `VeylPossibilityFog`, `HollowgreenSporeRain`, `NhalGeothermalSteam`, `CrownBlizzard`, `UnwrittenChronalSurge`).
+  - Environmental hazard simulation: dynamic visibility distance, chronal instability drain, frost glaze intensity, and movement penalties.
+  - Thermal Throttling Coupling: adapts Niagara particle spawn rates between Nominal (1.0x) and Critical (0.25x) under thermal mitigation via `UEdrathHardwareOptimizationSubsystem`.
+- **Forensic Clue Matrix & Save State Serialization**:
+  - Implemented `UEdrathForensicSubsystem` (`Source/Edrath/Public/Narrative/EdrathForensicSubsystem.h`, `Source/Edrath/Private/Narrative/EdrathForensicSubsystem.cpp`) tracking clue lifecycle stages (`Undiscovered`, `Discovered`, `AnalyzedInLedger`, `LinkedToContradiction`, `SynthesizedBreakthrough`).
+  - Serializes clue discovery masks and breakthrough tags directly into `UEdrathSaveGame`.
+- **Automated Verification Suites (3 New Suites)**:
+  - Extended `FEdrathAudioSubsystemPerspectiveAndSurfaceTest` verifying gait volume scaling, refractory window filtering, and slide Foley.
+  - Added `FEdrathWeatherAndEnvironmentalHazardTest` verifying regional weather hazards and thermal particle throttling.
+  - Added `FEdrathForensicSubsystemClueMatrixTest` verifying clue registration, duplicate rejection, ledger analysis, breakthrough commitment, and save state serialization roundtrips.
+
 ## [0.11.0] - 2026-11-23
 
 ### Added

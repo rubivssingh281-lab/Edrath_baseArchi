@@ -57,6 +57,7 @@
 #include "World/LastHonestKingMonumentActor.h"
 #include "Core/EdrathAudioSubsystem.h"
 #include "World/EdrathWeatherSubsystem.h"
+#include "Narrative/EdrathForensicSubsystem.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -2356,6 +2357,107 @@ bool FEdrathWeatherAndEnvironmentalHazardTest::RunTest(const FString&)
         WeatherSubsystem->ApplyThermalStatusToWeather(EEdrathThermalStatus::Critical);
         const int32 CriticalCount = WeatherSubsystem->CalculateThermalScaledParticleCount(BaseParticles);
         TestEqual(TEXT("Critical thermal mitigation must throttle particle count to 375"), CriticalCount, 375);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathForensicSubsystemClueMatrixTest,
+    "Edrath.Narrative.ForensicSubsystemClueMatrixTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathForensicSubsystemClueMatrixTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathForensicSubsystem* ForensicSubsystem = GameInstance->GetSubsystem<UEdrathForensicSubsystem>();
+    TestNotNull(TEXT("UEdrathForensicSubsystem must instantiate via GameInstance"), ForensicSubsystem);
+
+    if (ForensicSubsystem)
+    {
+        // 1. Initial State Verification
+        TestEqual(TEXT("Initial clue count must be zero"), ForensicSubsystem->GetDiscoveredClueCount(), 0);
+        TestEqual(TEXT("Initial breakthrough count must be zero"), ForensicSubsystem->GetUnlockedBreakthroughCount(), 0);
+
+        // 2. Discover Clues in World
+        const bool bClue1 = ForensicSubsystem->RegisterDiscoveredClue(
+            EdrathGameplayTags::QuestAct1Crypt,
+            EEdrathRegion::Veyl,
+            FText::FromString(TEXT("Tomb inscription reveals priest died 114 years ago, but corpse shows fresh embalming.")));
+        TestTrue(TEXT("Clue 1 must be successfully registered"), bClue1);
+        TestEqual(TEXT("Clue 1 status must be Discovered"),
+            ForensicSubsystem->GetClueStatus(EdrathGameplayTags::QuestAct1Crypt),
+            EEdrathClueInvestigationStatus::Discovered);
+
+        // Duplicate registration must return false
+        const bool bClue1Dup = ForensicSubsystem->RegisterDiscoveredClue(
+            EdrathGameplayTags::QuestAct1Crypt,
+            EEdrathRegion::Veyl,
+            FText::FromString(TEXT("Duplicate text")));
+        TestFalse(TEXT("Duplicate clue registration must be rejected"), bClue1Dup);
+
+        const bool bClue2 = ForensicSubsystem->RegisterDiscoveredClue(
+            EdrathGameplayTags::Twist1,
+            EEdrathRegion::Veyl,
+            FText::FromString(TEXT("Black Clock temporal radiation found in priest lung tissue.")));
+        TestTrue(TEXT("Clue 2 must be successfully registered"), bClue2);
+        TestEqual(TEXT("Total discovered clues must now be 2"), ForensicSubsystem->GetDiscoveredClueCount(), 2);
+
+        // 3. Clue Analysis in Forensic Ledger
+        const bool bAnalyzed = ForensicSubsystem->MarkClueAnalyzed(EdrathGameplayTags::QuestAct1Crypt);
+        TestTrue(TEXT("Marking clue analyzed must succeed"), bAnalyzed);
+        TestEqual(TEXT("Clue status must transition to AnalyzedInLedger"),
+            ForensicSubsystem->GetClueStatus(EdrathGameplayTags::QuestAct1Crypt),
+            EEdrathClueInvestigationStatus::AnalyzedInLedger);
+
+        // 4. Synthesizing Contradiction Breakthrough
+        TestFalse(TEXT("Breakthrough must not be unlocked prior to commitment"),
+            ForensicSubsystem->IsBreakthroughUnlocked(EdrathGameplayTags::Twist1));
+
+        const bool bBreakthrough = ForensicSubsystem->CommitBreakthrough(
+            EdrathGameplayTags::Twist1,
+            EdrathGameplayTags::QuestAct1Crypt,
+            EdrathGameplayTags::Twist1);
+        TestTrue(TEXT("Committing breakthrough must succeed"), bBreakthrough);
+        TestTrue(TEXT("Breakthrough must now be marked unlocked"),
+            ForensicSubsystem->IsBreakthroughUnlocked(EdrathGameplayTags::Twist1));
+        TestEqual(TEXT("Total unlocked breakthroughs must be 1"),
+            ForensicSubsystem->GetUnlockedBreakthroughCount(), 1);
+
+        TestEqual(TEXT("Clue 1 status must transition to SynthesizedBreakthrough"),
+            ForensicSubsystem->GetClueStatus(EdrathGameplayTags::QuestAct1Crypt),
+            EEdrathClueInvestigationStatus::SynthesizedBreakthrough);
+
+        // 5. SaveGame Serialization & Deserialization
+        UEdrathSaveGame* SaveObj = NewObject<UEdrathSaveGame>(TestWorld);
+        TestNotNull(TEXT("Save game object must instantiate"), SaveObj);
+        if (SaveObj)
+        {
+            ForensicSubsystem->SerializeToSaveGame(SaveObj);
+            TestEqual(TEXT("Serialized save must hold 2 clue tags"), SaveObj->DiscoveredClueTags.Num(), 2);
+            TestEqual(TEXT("Serialized save must hold 1 breakthrough tag"), SaveObj->ResolvedBreakthroughTags.Num(), 1);
+
+            // Create a fresh subsystem instance and deserialize
+            UEdrathForensicSubsystem* RestoredSubsystem = NewObject<UEdrathForensicSubsystem>(TestWorld);
+            RestoredSubsystem->DeserializeFromSaveGame(SaveObj);
+            TestEqual(TEXT("Restored subsystem must have 2 clues"), RestoredSubsystem->GetDiscoveredClueCount(), 2);
+            TestTrue(TEXT("Restored subsystem must have Twist1 breakthrough"),
+                RestoredSubsystem->IsBreakthroughUnlocked(EdrathGameplayTags::Twist1));
+        }
     }
 
     TestWorld->DestroyWorld(false);
