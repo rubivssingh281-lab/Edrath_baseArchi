@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
 
+## [0.11.0] - 2026-11-23
+
+### Added
+- **Interactive Reality-Altering Side Quest World Actors**:
+  - Implemented `AWeddingAltarActor` (`Source/Edrath/Public/World/WeddingAltarActor.h`, `Source/Edrath/Private/World/WeddingAltarActor.cpp`) governing `Quest.WeddingNotHappened`: handles wedding party echoes, current living family state, and the tragic choice between timeline merging and echo severing.
+  - Implemented `ABuriedFutureGraveActor` (`Source/Edrath/Public/World/BuriedFutureGraveActor.h`, `Source/Edrath/Private/World/BuriedFutureGraveActor.cpp`) governing `Quest.BuriedFuture`: unearthing the farmer's future corpse dated 30 years ahead and mutating family memory anchor continuity.
+  - Implemented `AVillageVotingShrineActor` (`Source/Edrath/Public/World/VillageVotingShrineActor.h`, `Source/Edrath/Private/World/VillageVotingShrineActor.cpp`) governing `Quest.VillageVotesOnDead`: ballot urn inspection, exposing the corrupt mayor's rigged swap of his accuser.
+  - Implemented `ADragonMemoryHoardActor` (`Source/Edrath/Public/World/DragonMemoryHoardActor.h`, `Source/Edrath/Private/World/DragonMemoryHoardActor.cpp`) governing `Quest.DragonNoFire`: crystallized memory hoard interaction, choosing between returning stolen memories to citizens and awakening the apocalyptic dragon.
+  - Implemented `ALastHonestKingMonumentActor` (`Source/Edrath/Public/World/LastHonestKingMonumentActor.h`, `Source/Edrath/Private/World/LastHonestKingMonumentActor.cpp`) governing `Quest.LastHonestKing`: royal confession plaque inspection, revealing the erased perpetrator versus preserving peace.
+- **Dual-Perspective Acoustic Subsystem & Black Clock Psychoacoustics**:
+  - Implemented `UEdrathAudioSubsystem` (`Source/Edrath/Public/Core/EdrathAudioSubsystem.h`, `Source/Edrath/Private/Core/EdrathAudioSubsystem.cpp`) managing dynamic environmental acoustic profiles (`ExteriorOpenField`, `InteriorClaustrophobicCrypt`, `TimelineDistortion`, `ConsciousArchive`, `DeepSubterranean`) responding dynamically to camera perspective transitions and timeline distortion state.
+  - Spatialized Black Clock Sternum Ticking: dynamic heart-rate tempo acceleration from 60 BPM (resting) up to 200 BPM with pitch warping and distortion disturbances under critical instability.
+  - Surface-Aware Footstep Routing: physical material audio routing from `UEdrathTerrainSubsystem` with left/right foot acoustic humanization across all `EEdrathSurfaceType` terrains.
+- **Automated Verification Suite Expansion (2 New Suites)**:
+  - Added `FEdrathSideQuestsWorldActorsVerificationTest` verifying state transitions and narrative resolutions for all 5 side quest physical world actors.
+  - Added `FEdrathAudioSubsystemPerspectiveAndSurfaceTest` verifying acoustic filtering, Black Clock tempo scaling, and surface footstep routing.
+
 ## [0.10.0] - 2026-11-20
 
 ### Added

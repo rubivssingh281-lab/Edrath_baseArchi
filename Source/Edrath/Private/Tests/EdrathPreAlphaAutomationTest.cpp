@@ -55,6 +55,7 @@
 #include "World/VillageVotingShrineActor.h"
 #include "World/DragonMemoryHoardActor.h"
 #include "World/LastHonestKingMonumentActor.h"
+#include "Core/EdrathAudioSubsystem.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -2127,6 +2128,117 @@ bool FEdrathSideQuestsWorldActorsVerificationTest::RunTest(const FString&)
         const bool bMonumentDone = KingMonument->ResolveRoyalConfession(true);
         TestTrue(TEXT("Monarch confession resolved"), bMonumentDone);
         TestTrue(TEXT("True war criminal exposed"), KingMonument->WasTrueCriminalExposed());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathAudioSubsystemPerspectiveAndSurfaceTest,
+    "Edrath.Audio.SubsystemPerspectiveAndSurfaceTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathAudioSubsystemPerspectiveAndSurfaceTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathAudioSubsystem* AudioSubsystem = GameInstance->GetSubsystem<UEdrathAudioSubsystem>();
+    TestNotNull(TEXT("UEdrathAudioSubsystem must be instantiated via GameInstance"), AudioSubsystem);
+
+    if (AudioSubsystem)
+    {
+        // 1. Verify Default Initial State
+        TestEqual(TEXT("Initial acoustic profile must be ExteriorOpenField"),
+            AudioSubsystem->GetActiveAcousticProfile(), EEdrathAcousticProfile::ExteriorOpenField);
+        TestEqual(TEXT("Exterior low pass cutoff must be open at 20000 Hz"),
+            AudioSubsystem->GetActiveAcousticSettings().LowPassCutoffHz, 20000.0f);
+        TestEqual(TEXT("Exterior stereo width must be 1.0"),
+            AudioSubsystem->GetActiveAcousticSettings().StereoSpreadWidth, 1.0f);
+
+        // 2. Verify Dual-Perspective Camera Acoustic Transition
+        AudioSubsystem->SetCameraPerspectiveAudioMode(EEdrathCameraMode::InteriorThirdPerson);
+        TestEqual(TEXT("Transition to interior camera must switch profile to InteriorClaustrophobicCrypt"),
+            AudioSubsystem->GetActiveAcousticProfile(), EEdrathAcousticProfile::InteriorClaustrophobicCrypt);
+        TestEqual(TEXT("Interior low pass cutoff must attenuate high frequencies to 12000 Hz"),
+            AudioSubsystem->GetActiveAcousticSettings().LowPassCutoffHz, 12000.0f);
+        TestEqual(TEXT("Interior stereo width must narrow to 0.45"),
+            AudioSubsystem->GetActiveAcousticSettings().StereoSpreadWidth, 0.45f);
+        TestEqual(TEXT("Interior foley presence gain must boost to 1.35"),
+            AudioSubsystem->GetActiveAcousticSettings().FoleyPresenceGain, 1.35f);
+
+        // Switch back to Exterior Birds-Eye
+        AudioSubsystem->SetCameraPerspectiveAudioMode(EEdrathCameraMode::ExteriorBirdsEye);
+        TestEqual(TEXT("Switch back to exterior must restore ExteriorOpenField"),
+            AudioSubsystem->GetActiveAcousticProfile(), EEdrathAcousticProfile::ExteriorOpenField);
+
+        // 3. Verify Timeline State Audio Shifts
+        AudioSubsystem->HandleTimelineStateAudioShift(ETimelineState::RejectedTimeline);
+        TestEqual(TEXT("Shift to RejectedTimeline must engage TimelineDistortion profile"),
+            AudioSubsystem->GetActiveAcousticProfile(), EEdrathAcousticProfile::TimelineDistortion);
+        TestEqual(TEXT("Timeline distortion must engage temporal flange modulation at 3.5 Hz"),
+            AudioSubsystem->GetActiveAcousticSettings().TemporalFlangeRateHz, 3.5f);
+        TestEqual(TEXT("Timeline distortion must apply heavy low-pass occlusion at 4800 Hz"),
+            AudioSubsystem->GetActiveAcousticSettings().LowPassCutoffHz, 4800.0f);
+
+        AudioSubsystem->HandleTimelineStateAudioShift(ETimelineState::MemoryReconstruction);
+        TestEqual(TEXT("Shift to MemoryReconstruction must engage ConsciousArchive profile"),
+            AudioSubsystem->GetActiveAcousticProfile(), EEdrathAcousticProfile::ConsciousArchive);
+        TestEqual(TEXT("Conscious archive must have cathedral decay time of 6.8 seconds"),
+            AudioSubsystem->GetActiveAcousticSettings().ReverbDecayTimeSeconds, 6.8f);
+
+        AudioSubsystem->HandleTimelineStateAudioShift(ETimelineState::PresentTimeline);
+        TestEqual(TEXT("Return to PresentTimeline must restore base camera profile"),
+            AudioSubsystem->GetActiveAcousticProfile(), EEdrathAcousticProfile::ExteriorOpenField);
+
+        // 4. Verify Black Clock Sternum Psychoacoustic Tempo Scaling
+        const float RestingBPM = AudioSubsystem->CalculateBlackClockBPM(1.0f);
+        TestEqual(TEXT("Resting clock BPM at 100% stability must be 60 BPM"), RestingBPM, 60.0f);
+
+        const float StressedBPM = AudioSubsystem->CalculateBlackClockBPM(0.5f);
+        TestTrue(TEXT("Clock BPM at 50% stability must be accelerated beyond resting (>= 115 BPM)"), StressedBPM >= 115.0f);
+
+        const float CriticalBPM = AudioSubsystem->CalculateBlackClockBPM(0.05f);
+        TestTrue(TEXT("Clock BPM at critical 5% stability must be hyperventilating (>= 180 BPM)"), CriticalBPM >= 180.0f);
+
+        const FVector SternumLoc(120.0f, 0.0f, 150.0f);
+        AudioSubsystem->UpdateBlackClockAcousticTempo(0.15f, SternumLoc);
+        FEdrathClockAudioState ClockState = AudioSubsystem->GetBlackClockAudioState();
+        TestEqual(TEXT("Sternum audio location must match updated vector"), ClockState.SternumWorldLocation, SternumLoc);
+        TestTrue(TEXT("Pitch shift multiplier must exceed 1.25x under severe instability"), ClockState.PitchShiftMultiplier >= 1.25f);
+        TestTrue(TEXT("Distortion disturbance must be active below 40% stability"), ClockState.DistortionDisturbance > 0.0f);
+
+        // 5. Verify Surface-Aware Footstep Audio Routing & Humanization
+        FEdrathFootstepAudioParams StoneLeft = AudioSubsystem->ProcessFootstepAudio(EEdrathSurfaceType::Stone, FVector::ZeroVector, true);
+        TestEqual(TEXT("Stone footstep audio cue tag must match"), StoneLeft.AudioCueTag, FName(TEXT("Footstep_Stone")));
+        TestFalse(TEXT("Stone footstep must not be submerged"), StoneLeft.bSubmergedSplash);
+
+        FEdrathFootstepAudioParams StoneRight = AudioSubsystem->ProcessFootstepAudio(EEdrathSurfaceType::Stone, FVector::ZeroVector, false);
+        TestTrue(TEXT("Left and right footsteps must have slight pitch humanization variance"), StoneLeft.PitchMultiplier != StoneRight.PitchMultiplier);
+
+        FEdrathFootstepAudioParams WaterImpact = AudioSubsystem->ProcessFootstepAudio(EEdrathSurfaceType::WaterShallow, FVector::ZeroVector, true);
+        TestEqual(TEXT("Water footstep cue tag must match"), WaterImpact.AudioCueTag, FName(TEXT("Footstep_Water")));
+        TestTrue(TEXT("Shallow water must flag submerged splash sound"), WaterImpact.bSubmergedSplash);
+
+        FEdrathFootstepAudioParams SnowImpact = AudioSubsystem->ProcessFootstepAudio(EEdrathSurfaceType::DeepSnow, FVector::ZeroVector, false);
+        TestEqual(TEXT("Deep snow cue tag must match"), SnowImpact.AudioCueTag, FName(TEXT("Footstep_Snow")));
+        TestTrue(TEXT("Deep snow must have high resonance damping"), SnowImpact.ResonanceDamping >= 0.70f);
+
+        FEdrathFootstepAudioParams FleshImpact = AudioSubsystem->ProcessFootstepAudio(EEdrathSurfaceType::FleshCorpses, FVector::ZeroVector, true);
+        TestEqual(TEXT("Flesh corpses cue tag must match"), FleshImpact.AudioCueTag, FName(TEXT("Footstep_Flesh")));
+        TestTrue(TEXT("Flesh footstep volume must be boosted for visceral squelch"), FleshImpact.VolumeMultiplier >= 1.10f);
     }
 
     TestWorld->DestroyWorld(false);
