@@ -73,6 +73,29 @@ void AEdrathCompanionAIController::ReactToForesightWarning(float WarningSeconds)
     SetBehaviorMode(ECompanionBehaviorMode::CombatSupport);
 }
 
+void AEdrathCompanionAIController::ReactToEnemyPoiseShatter(AActor* StaggeredTarget, float StaggerDuration)
+{
+    if (CurrentMode == ECompanionBehaviorMode::HostileDefection)
+    {
+        return;
+    }
+
+    AssistTargetActor = StaggeredTarget;
+    ForesightAnticipationTimer = FMath::Max(ForesightAnticipationTimer, StaggerDuration);
+    SetBehaviorMode(ECompanionBehaviorMode::CombatSupport);
+}
+
+void AEdrathCompanionAIController::AdaptFollowBehaviorToWeather(EEdrathWeatherType ActiveWeather, float VisibilityDistance)
+{
+    const bool bLowVisibilityWeather =
+        ActiveWeather == EEdrathWeatherType::CrownBlizzard ||
+        ActiveWeather == EEdrathWeatherType::VeylPossibilityFog ||
+        ActiveWeather == EEdrathWeatherType::AshenChronalStorm ||
+        VisibilityDistance < 3600.0f;
+
+    FollowDistance = bLowVisibilityWeather ? 160.0f : 280.0f;
+}
+
 AEdrathCompanionCharacter* AEdrathCompanionAIController::GetCompanionCharacter() const
 {
     return ControlledCompanion;

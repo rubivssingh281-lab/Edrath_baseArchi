@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 #include "Core/EdrathTypes.h"
+#include "World/EdrathWeatherSubsystem.h"
 #include "EdrathCompanionAIController.generated.h"
 
 class AKaelCharacter;
@@ -49,6 +50,17 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|CompanionAI")
     void ReactToForesightWarning(float WarningSeconds);
 
+    /** Capitalizes on a poise-shattered target by entering CombatSupport for a synchronized follow-up. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|CompanionAI")
+    void ReactToEnemyPoiseShatter(AActor* StaggeredTarget, float StaggerDuration);
+
+    /** Tightens companion follow radius during low-visibility storms and possibility fog. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|CompanionAI")
+    void AdaptFollowBehaviorToWeather(EEdrathWeatherType ActiveWeather, float VisibilityDistance);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|CompanionAI")
+    AActor* GetAssistTargetActor() const { return AssistTargetActor.Get(); }
+
     UFUNCTION(BlueprintPure, Category="Edrath|CompanionAI")
     ECompanionBehaviorMode GetBehaviorMode() const { return CurrentMode; }
 
@@ -80,4 +92,5 @@ protected:
     ECompanionBehaviorMode CurrentMode = ECompanionBehaviorMode::FollowingHero;
     float SuspicionLevel = 10.0f;
     float ForesightAnticipationTimer = 0.0f;
+    TWeakObjectPtr<AActor> AssistTargetActor;
 };
