@@ -115,6 +115,10 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|CombatFeedback")
     FEdrathHitStopProfile GetLastHitStopProfile() const { return LastHitStopProfile; }
 
+    /** Applies localized CustomTimeDilation to a specific actor and schedules automatic restoration. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|CombatFeedback")
+    void ApplyPerActorHitStopDilation(AActor* TargetActor, float DilationScale, float DurationSeconds);
+
     UPROPERTY(BlueprintAssignable, Category="Edrath|CombatFeedback")
     FOnHitStopTriggered OnHitStopTriggered;
 

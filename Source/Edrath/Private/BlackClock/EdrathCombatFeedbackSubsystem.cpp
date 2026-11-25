@@ -1,6 +1,9 @@
 #include "BlackClock/EdrathCombatFeedbackSubsystem.h"
 #include "Core/EdrathHardwareOptimizationSubsystem.h"
 #include "Core/EdrathAudioSubsystem.h"
+#include "GameFramework/Actor.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
 
 void UEdrathCombatFeedbackSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -176,4 +179,35 @@ bool UEdrathCombatFeedbackSubsystem::IsHitStopActive(float CurrentWorldTimeSecon
 {
     return (CurrentWorldTimeSeconds >= LastHitStopTimestampSeconds) &&
            (CurrentWorldTimeSeconds <= ActiveHitStopEndTimestampSeconds);
+}
+
+void UEdrathCombatFeedbackSubsystem::ApplyPerActorHitStopDilation(AActor* TargetActor, float DilationScale, float DurationSeconds)
+{
+    if (!IsValid(TargetActor))
+    {
+        return;
+    }
+
+    const float ClampedScale = FMath::Clamp(DilationScale, 0.01f, 1.0f);
+    TargetActor->CustomTimeDilation = ClampedScale;
+
+    if (UWorld* World = TargetActor->GetWorld())
+    {
+        if (DurationSeconds > 0.0f)
+        {
+            TWeakObjectPtr<AActor> WeakTarget(TargetActor);
+            FTimerHandle RestoreHandle;
+            World->GetTimerManager().SetTimer(
+                RestoreHandle,
+                [WeakTarget]()
+                {
+                    if (WeakTarget.IsValid())
+                    {
+                        WeakTarget->CustomTimeDilation = 1.0f;
+                    }
+                },
+                DurationSeconds,
+                false);
+        }
+    }
 }

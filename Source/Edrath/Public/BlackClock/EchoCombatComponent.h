@@ -53,6 +53,9 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|BlackClock|EchoCombat")
     const FEchoActionFrame& GetLastGhostStrike() const { return LastGhostStrike; }
 
+    UFUNCTION(BlueprintPure, Category="Edrath|Combat")
+    bool WasLastParryPerfect() const { return bLastParryWasPerfect; }
+
     UPROPERTY(BlueprintAssignable, Category="Edrath|BlackClock|EchoCombat")
     FOnVisualGhostStrikeRequested OnVisualGhostStrikeRequested;
 
@@ -78,6 +81,8 @@ protected:
 private:
     ECombatActionState CurrentState = ECombatActionState::Idle;
     float StateTimeRemaining = 0.0f;
+    float ParryStartTimestampSeconds = -10.0f;
+    bool bLastParryWasPerfect = false;
     FEchoActionFrame LastGhostStrike;
     int32 LastGhostHitCount = 0;
 

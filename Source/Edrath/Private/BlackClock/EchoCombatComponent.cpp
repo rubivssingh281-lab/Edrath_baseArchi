@@ -1,7 +1,9 @@
 #include "BlackClock/EchoCombatComponent.h"
+#include "BlackClock/EdrathCombatFeedbackSubsystem.h"
 #include "Character/KaelCharacter.h"
 #include "BlackClock/BlackClockComponent.h"
 #include "Engine/World.h"
+#include "Engine/GameInstance.h"
 #include "Engine/HitResult.h"
 #include "CollisionQueryParams.h"
 
@@ -98,6 +100,7 @@ bool UEdrathEchoCombatComponent::ExecuteParry(float InParryWindow)
             return false;
         }
 
+        ParryStartTimestampSeconds = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
         SetCombatState(ECombatActionState::Parrying, FMath::Clamp(InParryWindow, 0.15f, 0.4f));
         return true;
     }
@@ -116,12 +119,34 @@ bool UEdrathEchoCombatComponent::CheckAndResolveIncomingHit(float IncomingDamage
     {
         SetCombatState(ECombatActionState::Idle, 0.0f);
 
+        const float CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+        float StabilityReward = ParryStabilityReward;
+        bLastParryWasPerfect = false;
+
+        if (UWorld* World = GetWorld())
+        {
+            if (UGameInstance* GI = World->GetGameInstance())
+            {
+                if (UEdrathCombatFeedbackSubsystem* Feedback = GI->GetSubsystem<UEdrathCombatFeedbackSubsystem>())
+                {
+                    bLastParryWasPerfect = Feedback->EvaluatePerfectParryWindow(ParryStartTimestampSeconds, CurrentTime);
+                    StabilityReward = Feedback->GetParryClockStabilityReward(bLastParryWasPerfect);
+                    const EEdrathImpactSeverity Severity = bLastParryWasPerfect
+                        ? EEdrathImpactSeverity::PerfectParry
+                        : EEdrathImpactSeverity::HeavyStrike;
+                    const FEdrathHitStopProfile Profile = Feedback->TriggerHitStop(Severity, CurrentTime);
+                    Feedback->ApplyPerActorHitStopDilation(GetOwner(), Profile.TimeDilationScale, Profile.DurationSeconds);
+                    Feedback->ApplyPerActorHitStopDilation(Attacker, Profile.TimeDilationScale, Profile.DurationSeconds);
+                }
+            }
+        }
+
         // Award stability reward to owner's Black Clock if present
         if (AActor* OwnerActor = GetOwner())
         {
             if (UBlackClockComponent* ClockComp = OwnerActor->FindComponentByClass<UBlackClockComponent>())
             {
-                ClockComp->RestoreStability(ParryStabilityReward);
+                ClockComp->RestoreStability(StabilityReward);
             }
         }
 
@@ -162,12 +187,24 @@ int32 UEdrathEchoCombatComponent::PerformGhostStrikePhysicsSweep(const FEchoActi
     if (bHit)
     {
         const float DamageToDeal = EchoFrame.BaseDamage * 0.85f;
+        UEdrathCombatFeedbackSubsystem* Feedback = nullptr;
+        if (UGameInstance* GI = GetWorld()->GetGameInstance())
+        {
+            Feedback = GI->GetSubsystem<UEdrathCombatFeedbackSubsystem>();
+        }
+        const float CurrentTime = GetWorld()->GetTimeSeconds();
+
         for (const FHitResult& Hit : HitResults)
         {
             AActor* HitActor = Hit.GetActor();
             if (HitActor && HitActor != GetOwner())
             {
                 LastGhostHitCount++;
+                if (Feedback)
+                {
+                    const FEdrathHitStopProfile Profile = Feedback->TriggerHitStop(EEdrathImpactSeverity::EchoResonance, CurrentTime);
+                    Feedback->ApplyPerActorHitStopDilation(HitActor, Profile.TimeDilationScale, Profile.DurationSeconds);
+                }
                 if (OnEchoGhostSweepHit.IsBound())
                 {
                     OnEchoGhostSweepHit.Broadcast(HitActor, DamageToDeal);
