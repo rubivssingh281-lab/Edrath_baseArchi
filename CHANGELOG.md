@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
 
+## [0.13.0] - 2026-11-25
+
+### Added
+- **Combat Impact, Hit-Stop & Poise Shatter Subsystem**:
+  - Implemented `UEdrathCombatFeedbackSubsystem` (`Source/Edrath/Public/BlackClock/EdrathCombatFeedbackSubsystem.h`, `Source/Edrath/Private/BlackClock/EdrathCombatFeedbackSubsystem.cpp`) managing deterministic hit-stop freeze frames (`LightSlash`, `HeavyStrike`, `EchoResonance`, `PerfectParry`, `PoiseShatter`), camera shake intensity envelopes, and 120ms refractory damping to prevent multi-hit Echo Strike frame stutter.
+  - Implemented `EvaluatePoiseBreak` combining Echo Strike ($1.35\times$) and Parry Counter ($2.0\times$) poise damage multipliers with extended stagger windows ($2.40\,\text{s}$ on Echo Shatter).
+  - Implemented 140ms Perfect Chronal Parry evaluation rewarding $+20.0$ Black Clock stability and triggering `TimelineDistortion` audio feedback.
+- **Cross-Subsystem Save/Load Integration**:
+  - Extended `UEdrathSaveGame` (`Source/Edrath/Public/Core/EdrathSaveGame.h`) with `ActiveWeatherType` persistence.
+  - Wired `UEdrathSaveSubsystem` (`Source/Edrath/Private/Core/EdrathSaveSubsystem.cpp`) to serialize and restore `UEdrathForensicSubsystem` clue matrices/breakthroughs and `UEdrathWeatherSubsystem` regional weather states.
+- **Automated Verification Suites (2 New Suites)**:
+  - Added `FEdrathCombatFeedbackAndHitStopTest` verifying hit-stop active windows, refractory damping, poise shatter multipliers, and perfect parry timing.
+  - Added `FEdrathFullSubsystemSaveLoadIntegrationTest` verifying end-to-end `UEdrathSaveSubsystem` roundtrips across forensic clues, breakthroughs, and regional weather.
+
 ## [0.12.0] - 2026-11-23
 
 ### Added

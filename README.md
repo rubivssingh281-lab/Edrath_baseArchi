@@ -34,9 +34,9 @@ To clean transient build packages and reclaim 20-50GB on 512GB laptop drives:
 
 ---
 
-## 🏗️ 12-Phase Master Polish Architecture
+## 🏗️ 13-Phase Master Polish Architecture
 
-The codebase features an end-to-end, deterministic 12-phase polish across all gameplay, graphics, memory, and narrative subsystems:
+The codebase features an end-to-end, deterministic 13-phase polish across all gameplay, graphics, memory, and narrative subsystems:
 
 | Phase | Subsystem & Technical Scope | Key C++ Classes & Shaders | Automated Verification Test |
 | :--- | :--- | :--- | :--- |
@@ -52,6 +52,7 @@ The codebase features an end-to-end, deterministic 12-phase polish across all ga
 | **Phase 10** | **Side Quest World Actors & Dual-Perspective Audio Subsystem** | `AWeddingAltarActor`, `ABuriedFutureGraveActor`, `AVillageVotingShrineActor`, `ADragonMemoryHoardActor`, `ALastHonestKingMonumentActor`, `UEdrathAudioSubsystem` | `FEdrathSideQuestsWorldActorsVerificationTest`, `FEdrathAudioSubsystemPerspectiveAndSurfaceTest` |
 | **Phase 11** | **Regional Weather Hazards & Thermal Particle Scaling** | `UEdrathWeatherSubsystem`, `UEdrathHardwareOptimizationSubsystem` | `FEdrathWeatherAndEnvironmentalHazardTest` |
 | **Phase 12** | **Forensic Clue Matrix & Save State Serialization** | `UEdrathForensicSubsystem`, `UEdrathSaveGame` | `FEdrathForensicSubsystemClueMatrixTest` |
+| **Phase 13** | **Combat Hit-Stop, Poise Shatter & Cross-Subsystem Save Integration** | `UEdrathCombatFeedbackSubsystem`, `UEdrathSaveSubsystem` | `FEdrathCombatFeedbackAndHitStopTest`, `FEdrathFullSubsystemSaveLoadIntegrationTest` |
 
 ---
 

@@ -2,6 +2,8 @@
 #include "Character/KaelCharacter.h"
 #include "BlackClock/BlackClockComponent.h"
 #include "Narrative/EdrathNarrativeSubsystem.h"
+#include "Narrative/EdrathForensicSubsystem.h"
+#include "World/EdrathWeatherSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 
@@ -124,6 +126,16 @@ void UEdrathSaveSubsystem::PopulateSaveFromWorld(UEdrathSaveGame* SaveObject)
             SaveObject->ClockUsagePrunedFuturesCount = Narrative->GetPrunedFuturesCount();
             SaveObject->bUnlockedFourthPath = Narrative->HasUnlockedFourthPath();
         }
+
+        if (UEdrathForensicSubsystem* Forensics = GI->GetSubsystem<UEdrathForensicSubsystem>())
+        {
+            Forensics->SerializeToSaveGame(SaveObject);
+        }
+
+        if (UEdrathWeatherSubsystem* Weather = GI->GetSubsystem<UEdrathWeatherSubsystem>())
+        {
+            SaveObject->ActiveWeatherType = Weather->GetActiveWeatherType();
+        }
     }
 }
 
@@ -154,6 +166,16 @@ void UEdrathSaveSubsystem::ApplySaveToWorld(const UEdrathSaveGame* SaveObject)
             Narrative->SetRegionalInstabilityMap(SaveObject->RegionalInstabilityMap);
             Narrative->RestoreEvidenceRecords(SaveObject->EvidenceRegistry);
             Narrative->SetCompanionStates(SaveObject->CompanionRelationshipMap);
+        }
+
+        if (UEdrathForensicSubsystem* Forensics = GI->GetSubsystem<UEdrathForensicSubsystem>())
+        {
+            Forensics->DeserializeFromSaveGame(SaveObject);
+        }
+
+        if (UEdrathWeatherSubsystem* Weather = GI->GetSubsystem<UEdrathWeatherSubsystem>())
+        {
+            Weather->SetActiveWeather(SaveObject->ActiveWeatherType);
         }
     }
 }

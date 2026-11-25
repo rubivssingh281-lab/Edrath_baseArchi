@@ -58,6 +58,7 @@
 #include "Core/EdrathAudioSubsystem.h"
 #include "World/EdrathWeatherSubsystem.h"
 #include "Narrative/EdrathForensicSubsystem.h"
+#include "BlackClock/EdrathCombatFeedbackSubsystem.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -2457,6 +2458,129 @@ bool FEdrathForensicSubsystemClueMatrixTest::RunTest(const FString&)
             TestEqual(TEXT("Restored subsystem must have 2 clues"), RestoredSubsystem->GetDiscoveredClueCount(), 2);
             TestTrue(TEXT("Restored subsystem must have Twist1 breakthrough"),
                 RestoredSubsystem->IsBreakthroughUnlocked(EdrathGameplayTags::Twist1));
+        }
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathCombatFeedbackAndHitStopTest,
+    "Edrath.Combat.CombatFeedbackAndHitStopTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathCombatFeedbackAndHitStopTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathCombatFeedbackSubsystem* CombatFeedback = GameInstance->GetSubsystem<UEdrathCombatFeedbackSubsystem>();
+    TestNotNull(TEXT("UEdrathCombatFeedbackSubsystem must instantiate via GameInstance"), CombatFeedback);
+
+    if (CombatFeedback)
+    {
+        // 1. Verify Hit-Stop Trigger & Active Window
+        FEdrathHitStopProfile HeavyHit = CombatFeedback->TriggerHitStop(EEdrathImpactSeverity::HeavyStrike, 5.0f);
+        TestEqual(TEXT("HeavyStrike hit-stop duration must be 0.075s"), HeavyHit.DurationSeconds, 0.075f);
+        TestTrue(TEXT("Hit-stop must be active at 5.03s"), CombatFeedback->IsHitStopActive(5.03f));
+        TestFalse(TEXT("Hit-stop must expire by 5.10s"), CombatFeedback->IsHitStopActive(5.10f));
+
+        // 2. Verify Refractory Cooldown Damping (multi-hit Echo Strike within 120ms)
+        FEdrathHitStopProfile RapidHit = CombatFeedback->TriggerHitStop(EEdrathImpactSeverity::HeavyStrike, 5.05f);
+        TestTrue(TEXT("Rapid hit-stop within 120ms refractory window must be damped (< 0.03s)"), RapidHit.DurationSeconds < 0.03f);
+
+        // 3. Verify Poise Break with Echo Strike (1.35x) & Parry Counter (2.0x)
+        // Current Poise = 50.0, Incoming = 20.0 * 1.35 * 2.0 = 54.0 -> Poise Broken!
+        FEdrathPoiseEvaluationResult PoiseResult = CombatFeedback->EvaluatePoiseBreak(50.0f, 20.0f, true, true, 6.0f);
+        TestTrue(TEXT("Combined Parry Counter + Echo Strike must shatter 50 poise"), PoiseResult.bPoiseBroken);
+        TestEqual(TEXT("Remaining poise must clamp to 0"), PoiseResult.RemainingPoise, 0.0f);
+        TestEqual(TEXT("Echo Poise Shatter stagger duration must be 2.40s"), PoiseResult.StaggerDurationSeconds, 2.40f);
+        TestEqual(TEXT("Resulting severity must be PoiseShatter"), PoiseResult.ResultingSeverity, EEdrathImpactSeverity::PoiseShatter);
+
+        // 4. Verify Perfect Parry Chronal Window (140ms)
+        TestTrue(TEXT("Parry impact within 100ms must qualify as Perfect Parry"), CombatFeedback->EvaluatePerfectParryWindow(10.0f, 10.10f));
+        TestFalse(TEXT("Parry impact at 200ms must NOT qualify as Perfect Parry"), CombatFeedback->EvaluatePerfectParryWindow(10.0f, 10.20f));
+        TestEqual(TEXT("Perfect parry clock stability reward must be 20.0"), CombatFeedback->GetParryClockStabilityReward(true), 20.0f);
+        TestEqual(TEXT("Standard parry clock stability reward must be 10.0"), CombatFeedback->GetParryClockStabilityReward(false), 10.0f);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathFullSubsystemSaveLoadIntegrationTest,
+    "Edrath.SaveSystem.FullSubsystemSaveLoadIntegrationTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathFullSubsystemSaveLoadIntegrationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathSaveSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UEdrathSaveSubsystem>();
+    UEdrathForensicSubsystem* ForensicSubsystem = GameInstance->GetSubsystem<UEdrathForensicSubsystem>();
+    UEdrathWeatherSubsystem* WeatherSubsystem = GameInstance->GetSubsystem<UEdrathWeatherSubsystem>();
+
+    TestNotNull(TEXT("UEdrathSaveSubsystem must instantiate"), SaveSubsystem);
+    TestNotNull(TEXT("UEdrathForensicSubsystem must instantiate"), ForensicSubsystem);
+    TestNotNull(TEXT("UEdrathWeatherSubsystem must instantiate"), WeatherSubsystem);
+
+    if (SaveSubsystem && ForensicSubsystem && WeatherSubsystem)
+    {
+        // Populate state across subsystems
+        ForensicSubsystem->RegisterDiscoveredClue(
+            EdrathGameplayTags::QuestAct1Crypt,
+            EEdrathRegion::Veyl,
+            FText::FromString(TEXT("Test Crypt Clue")));
+        ForensicSubsystem->CommitBreakthrough(
+            EdrathGameplayTags::Twist1,
+            EdrathGameplayTags::QuestAct1Crypt,
+            EdrathGameplayTags::Twist1);
+        WeatherSubsystem->SetCanonicalRegionWeather(EEdrathRegion::CrownOfWinter);
+
+        const FString TestSlot = TEXT("Edrath_Integration_TestSlot");
+        const bool bSaved = SaveSubsystem->SaveGameToSlot(TestSlot, 0);
+        TestTrue(TEXT("SaveGameToSlot must succeed"), bSaved);
+
+        if (bSaved)
+        {
+            // Mutate weather away from CrownBlizzard, then reload from disk
+            WeatherSubsystem->SetActiveWeather(EEdrathWeatherType::ClearChronalSky);
+            TestEqual(TEXT("Weather temporarily reset to ClearChronalSky"),
+                WeatherSubsystem->GetActiveWeatherType(), EEdrathWeatherType::ClearChronalSky);
+
+            const bool bLoaded = SaveSubsystem->LoadGameFromSlot(TestSlot, 0);
+            TestTrue(TEXT("LoadGameFromSlot must succeed"), bLoaded);
+            TestEqual(TEXT("Weather must be restored to CrownBlizzard after load"),
+                WeatherSubsystem->GetActiveWeatherType(), EEdrathWeatherType::CrownBlizzard);
+            TestTrue(TEXT("Forensic breakthrough Twist1 must persist across load"),
+                ForensicSubsystem->IsBreakthroughUnlocked(EdrathGameplayTags::Twist1));
+
+            SaveSubsystem->DeleteSaveSlot(TestSlot, 0);
         }
     }
 

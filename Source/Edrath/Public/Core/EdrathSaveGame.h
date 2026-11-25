@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/SaveGame.h"
 #include "Core/EdrathTypes.h"
+#include "World/EdrathWeatherSubsystem.h"
 #include "EdrathSaveGame.generated.h"
 
 UCLASS()
@@ -75,4 +76,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Forensics")
     TArray<FGameplayTag> ResolvedBreakthroughTags;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|World")
+    EEdrathWeatherType ActiveWeatherType = EEdrathWeatherType::ClearChronalSky;
 };
