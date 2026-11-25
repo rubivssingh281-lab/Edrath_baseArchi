@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
 #include "Core/EdrathTypes.h"
+#include "World/EdrathWeatherSubsystem.h"
+#include "BlackClock/EdrathCombatFeedbackSubsystem.h"
 #include "EdrathHUD.generated.h"
 
 class UBlackClockWidget;
@@ -57,6 +59,33 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Edrath|HUD")
     void SetReticlePerspectiveMode(EEdrathCameraMode NewCameraMode);
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|HUD|Atmosphere")
+    void UpdateWeatherHazardHUD(EEdrathWeatherType WeatherType, float FrostIntensity, float SporeToxicity);
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|HUD|Combat")
+    void UpdatePoiseAndStaggerHUD(float CurrentPoise, float MaxPoise, bool bIsStaggered);
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|HUD|Combat")
+    void TriggerChronalImpactVignette(EEdrathImpactSeverity Severity, float Intensity);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|HUD|Combat")
+    float GetHUDPoiseRatio() const { return CachedPoiseRatio; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|HUD|Combat")
+    bool IsHUDStaggerAlertActive() const { return bStaggerAlertActive; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|HUD|Atmosphere")
+    float GetHUDFrostVignetteIntensity() const { return CachedFrostIntensity; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|HUD|Atmosphere")
+    float GetHUDSporeToxicityIntensity() const { return CachedSporeToxicity; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|HUD|Atmosphere")
+    EEdrathWeatherType GetActiveHUDWeatherType() const { return CachedWeatherType; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|HUD|Combat")
+    float GetLastChronalImpactIntensity() const { return LastImpactVignetteIntensity; }
 
     UFUNCTION(BlueprintPure, Category="Edrath|HUD")
     bool IsForensicLedgerOpen() const { return bIsLedgerOpen; }
@@ -131,4 +160,10 @@ protected:
 private:
     bool bIsLedgerOpen = false;
     bool bIsContradictionBoardOpen = false;
+    float CachedPoiseRatio = 1.0f;
+    bool bStaggerAlertActive = false;
+    float CachedFrostIntensity = 0.0f;
+    float CachedSporeToxicity = 0.0f;
+    EEdrathWeatherType CachedWeatherType = EEdrathWeatherType::ClearChronalSky;
+    float LastImpactVignetteIntensity = 0.0f;
 };

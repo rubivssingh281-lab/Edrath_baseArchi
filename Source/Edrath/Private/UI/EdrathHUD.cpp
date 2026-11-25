@@ -253,3 +253,26 @@ void AEdrathHUD::SetReticlePerspectiveMode(EEdrathCameraMode NewCameraMode)
         ReticleWidget->SetCameraPerspectiveMode(NewCameraMode);
     }
 }
+
+void AEdrathHUD::UpdateWeatherHazardHUD(EEdrathWeatherType WeatherType, float FrostIntensity, float SporeToxicity)
+{
+    CachedWeatherType = WeatherType;
+    CachedFrostIntensity = FMath::Clamp(FrostIntensity, 0.0f, 1.0f);
+    CachedSporeToxicity = FMath::Max(0.0f, SporeToxicity);
+}
+
+void AEdrathHUD::UpdatePoiseAndStaggerHUD(float CurrentPoise, float MaxPoise, bool bIsStaggered)
+{
+    const float SafeMax = FMath::Max(1.0f, MaxPoise);
+    CachedPoiseRatio = FMath::Clamp(CurrentPoise / SafeMax, 0.0f, 1.0f);
+    bStaggerAlertActive = bIsStaggered;
+}
+
+void AEdrathHUD::TriggerChronalImpactVignette(EEdrathImpactSeverity Severity, float Intensity)
+{
+    LastImpactVignetteIntensity = FMath::Clamp(Intensity, 0.0f, 1.0f);
+    if (Severity == EEdrathImpactSeverity::PoiseShatter)
+    {
+        bStaggerAlertActive = true;
+    }
+}
