@@ -65,8 +65,26 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Edrath|Kael|Attributes")
     float CurrentStamina = 100.0f;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Kael|Attributes")
+    float MaxPoise = 100.0f;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Edrath|Kael|Attributes")
+    float CurrentPoise = 100.0f;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Edrath|Kael|Attributes")
+    bool bIsStaggered = false;
+
     UFUNCTION(BlueprintCallable, Category="Edrath|Kael|Attributes")
     void ApplyDamage(float DamageAmount);
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Kael|Attributes")
+    bool ApplyPoiseDamage(float PoiseDamageAmount, bool bFromEchoStrike = false);
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Kael|Attributes")
+    void RestorePoise(float Amount);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Kael|Attributes")
+    bool IsStaggered() const { return bIsStaggered; }
 
     UFUNCTION(BlueprintCallable, Category="Edrath|Kael|Attributes")
     void RestoreHealth(float HealAmount);

@@ -1,11 +1,15 @@
 #include "Character/KaelCharacter.h"
 #include "BlackClock/BlackClockComponent.h"
 #include "BlackClock/EchoCombatComponent.h"
+#include "BlackClock/EdrathCombatFeedbackSubsystem.h"
 #include "Camera/CameraComponent.h"
 #include "Camera/EdrathDualCameraComponent.h"
 #include "Character/KaelModularRigComponent.h"
 #include "Character/KaelTerrainAdaptationComponent.h"
+#include "Core/EdrathAudioSubsystem.h"
 #include "Components/StaticMeshComponent.h"
+#include "Engine/World.h"
+#include "Engine/GameInstance.h"
 #include "GameFramework/SpringArmComponent.h"
 
 AKaelCharacter::AKaelCharacter()
@@ -46,6 +50,42 @@ void AKaelCharacter::ApplyDamage(float DamageAmount)
     CurrentHealth = FMath::Clamp(CurrentHealth - FMath::Max(0.0f, DamageAmount), 0.0f, MaxHealth);
 }
 
+bool AKaelCharacter::ApplyPoiseDamage(float PoiseDamageAmount, bool bFromEchoStrike)
+{
+    if (UWorld* World = GetWorld())
+    {
+        if (UGameInstance* GI = World->GetGameInstance())
+        {
+            if (UEdrathCombatFeedbackSubsystem* Feedback = GI->GetSubsystem<UEdrathCombatFeedbackSubsystem>())
+            {
+                const FEdrathPoiseEvaluationResult Result = Feedback->EvaluatePoiseBreak(
+                    CurrentPoise,
+                    PoiseDamageAmount,
+                    false,
+                    bFromEchoStrike,
+                    World->GetTimeSeconds());
+
+                CurrentPoise = Result.RemainingPoise;
+                bIsStaggered = Result.bPoiseBroken;
+                return bIsStaggered;
+            }
+        }
+    }
+
+    CurrentPoise = FMath::Clamp(CurrentPoise - FMath::Max(0.0f, PoiseDamageAmount), 0.0f, MaxPoise);
+    bIsStaggered = (CurrentPoise <= 0.0f);
+    return bIsStaggered;
+}
+
+void AKaelCharacter::RestorePoise(float Amount)
+{
+    CurrentPoise = FMath::Clamp(CurrentPoise + FMath::Max(0.0f, Amount), 0.0f, MaxPoise);
+    if (CurrentPoise > 0.0f)
+    {
+        bIsStaggered = false;
+    }
+}
+
 void AKaelCharacter::RestoreHealth(float HealAmount)
 {
     CurrentHealth = FMath::Clamp(CurrentHealth + FMath::Max(0.0f, HealAmount), 0.0f, MaxHealth);
@@ -75,7 +115,31 @@ void AKaelCharacter::PerformPrimaryAttack()
 
 bool AKaelCharacter::PerformDodge()
 {
-    return EchoCombatComponent && EchoCombatComponent->ExecuteDodgeRoll(0.45f);
+    const bool bDodged = EchoCombatComponent && EchoCombatComponent->ExecuteDodgeRoll(0.45f);
+    if (bDodged)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            if (UGameInstance* GI = World->GetGameInstance())
+            {
+                if (UEdrathAudioSubsystem* Audio = GI->GetSubsystem<UEdrathAudioSubsystem>())
+                {
+                    const EEdrathSurfaceType Surface = TerrainAdaptationComponent
+                        ? TerrainAdaptationComponent->GetCurrentSurfaceType()
+                        : EEdrathSurfaceType::Stone;
+                    const float GroundSpeed = FMath::Max(GetVelocity().Size2D(), 800.0f);
+                    Audio->ProcessLocomotionFootstepAudio(
+                        Surface,
+                        GetActorLocation(),
+                        true,
+                        GroundSpeed,
+                        EEdrathLocomotionGait::DodgeRoll,
+                        World->GetTimeSeconds());
+                }
+            }
+        }
+    }
+    return bDodged;
 }
 
 bool AKaelCharacter::PerformParry()
