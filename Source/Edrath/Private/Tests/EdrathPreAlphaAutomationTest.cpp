@@ -2591,6 +2591,180 @@ bool FEdrathFullSubsystemSaveLoadIntegrationTest::RunTest(const FString&)
 
 
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathPerActorHitStopAndParryIntegrationTest,
+    "Edrath.Combat.PerActorHitStopAndParryIntegrationTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathPerActorHitStopAndParryIntegrationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    AActor* Attacker = TestWorld->SpawnActor<AActor>();
+    UEdrathCombatFeedbackSubsystem* Feedback = GameInstance->GetSubsystem<UEdrathCombatFeedbackSubsystem>();
+
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("Attacker must spawn"), Attacker);
+    TestNotNull(TEXT("Feedback subsystem must exist"), Feedback);
+
+    if (Kael && Attacker && Feedback && Kael->EchoCombatComponent)
+    {
+        Feedback->ApplyPerActorHitStopDilation(Attacker, 0.05f, 0.1f);
+        TestEqual(TEXT("Attacker CustomTimeDilation must be localized to 0.05f"), Attacker->CustomTimeDilation, 0.05f);
+        TestEqual(TEXT("Kael CustomTimeDilation must remain 1.0f until hit-stop targets him"), Kael->CustomTimeDilation, 1.0f);
+
+        const bool bParryStarted = Kael->PerformParry();
+        TestTrue(TEXT("Kael must enter parry window"), bParryStarted);
+
+        const bool bDamageApplied = Kael->EchoCombatComponent->CheckAndResolveIncomingHit(40.0f, Attacker);
+        TestFalse(TEXT("Parried hit must negate incoming damage"), bDamageApplied);
+        TestTrue(TEXT("Immediate parry in same frame must register as Perfect Parry"), Kael->EchoCombatComponent->WasLastParryPerfect());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathKaelPoiseAndDodgeAudioIntegrationTest,
+    "Edrath.Character.KaelPoiseAndDodgeAudioIntegrationTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathKaelPoiseAndDodgeAudioIntegrationTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    UEdrathAudioSubsystem* Audio = GameInstance->GetSubsystem<UEdrathAudioSubsystem>();
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("Audio subsystem must exist"), Audio);
+
+    if (Kael && Audio)
+    {
+        TestFalse(TEXT("Kael starts unstaggered"), Kael->IsStaggered());
+        const bool bStaggered = Kael->ApplyPoiseDamage(80.0f, true); // 80 * 1.35 = 108 >= 100
+        TestTrue(TEXT("Echo Strike poise damage must shatter Kael's 100 poise"), bStaggered);
+        TestTrue(TEXT("Kael must be marked staggered"), Kael->IsStaggered());
+
+        Kael->RestorePoise(50.0f);
+        TestFalse(TEXT("Restoring poise must clear staggered state"), Kael->IsStaggered());
+
+        const bool bDodged = Kael->PerformDodge();
+        TestTrue(TEXT("Kael dodge must succeed"), bDodged);
+        TestEqual(TEXT("Dodge must route DodgeRoll slide cue to audio subsystem"),
+            Audio->GetLastFootstepParams().AudioCueTag, FName(TEXT("Footstep_Slide_Stone")));
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathHUDWeatherAndPoiseFeedbackTest,
+    "Edrath.UI.HUDWeatherAndPoiseFeedbackTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathHUDWeatherAndPoiseFeedbackTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    AEdrathHUD* HUD = TestWorld->SpawnActor<AEdrathHUD>();
+    TestNotNull(TEXT("AEdrathHUD must spawn"), HUD);
+
+    if (HUD)
+    {
+        HUD->UpdateWeatherHazardHUD(EEdrathWeatherType::CrownBlizzard, 0.90f, 0.0f);
+        TestEqual(TEXT("HUD weather type must match CrownBlizzard"), HUD->GetActiveHUDWeatherType(), EEdrathWeatherType::CrownBlizzard);
+        TestEqual(TEXT("HUD frost vignette intensity must match 0.90"), HUD->GetHUDFrostVignetteIntensity(), 0.90f);
+
+        HUD->UpdatePoiseAndStaggerHUD(35.0f, 100.0f, false);
+        TestEqual(TEXT("HUD poise ratio must be 0.35"), HUD->GetHUDPoiseRatio(), 0.35f);
+        TestFalse(TEXT("Stagger alert must be false"), HUD->IsHUDStaggerAlertActive());
+
+        HUD->TriggerChronalImpactVignette(EEdrathImpactSeverity::PoiseShatter, 0.95f);
+        TestEqual(TEXT("Impact vignette intensity must be 0.95"), HUD->GetLastChronalImpactIntensity(), 0.95f);
+        TestTrue(TEXT("PoiseShatter vignette must activate stagger alert"), HUD->IsHUDStaggerAlertActive());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathCompanionWeatherAndPoiseAssistTest,
+    "Edrath.AI.CompanionWeatherAndPoiseAssistTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathCompanionWeatherAndPoiseAssistTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    AEdrathCompanionAIController* CompanionAI = TestWorld->SpawnActor<AEdrathCompanionAIController>();
+    AActor* StaggeredEnemy = TestWorld->SpawnActor<AActor>();
+    TestNotNull(TEXT("Companion AI Controller must spawn"), CompanionAI);
+    TestNotNull(TEXT("Staggered enemy must spawn"), StaggeredEnemy);
+
+    if (CompanionAI && StaggeredEnemy)
+    {
+        TestEqual(TEXT("Default follow distance must be 280.0f"), CompanionAI->FollowDistance, 280.0f);
+        CompanionAI->AdaptFollowBehaviorToWeather(EEdrathWeatherType::CrownBlizzard, 1800.0f);
+        TestEqual(TEXT("Blizzard must tighten companion follow distance to 160.0f"), CompanionAI->FollowDistance, 160.0f);
+
+        CompanionAI->AdaptFollowBehaviorToWeather(EEdrathWeatherType::ClearChronalSky, 14000.0f);
+        TestEqual(TEXT("Clear sky must restore companion follow distance to 280.0f"), CompanionAI->FollowDistance, 280.0f);
+
+        CompanionAI->ReactToEnemyPoiseShatter(StaggeredEnemy, 2.40f);
+        TestEqual(TEXT("Poise shatter must switch companion to CombatSupport"),
+            CompanionAI->GetBehaviorMode(), ECompanionBehaviorMode::CombatSupport);
+        TestEqual(TEXT("Assist target must reference staggered enemy"),
+            CompanionAI->GetAssistTargetActor(), StaggeredEnemy);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
 
 
 

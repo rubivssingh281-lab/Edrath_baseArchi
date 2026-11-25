@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
 
+## [0.14.0] - 2026-11-25
+
+### Added
+- **Per-Actor Hit-Stop Dilation & Echo Combat Integration**:
+  - Added `ApplyPerActorHitStopDilation` to `UEdrathCombatFeedbackSubsystem` using localized `CustomTimeDilation` with timer-based restoration so camera orbit and ambient weather remain fluid during impacts.
+  - Wired `UEdrathEchoCombatComponent` (`ExecuteParry`, `CheckAndResolveIncomingHit`, `PerformGhostStrikePhysicsSweep`) to evaluate Perfect Chronal Parries ($140\,\text{ms}$ window), award Black Clock stability, and trigger per-actor hit-stop freeze frames.
+- **Character Poise, Dodge Slide Audio & HUD Coupling**:
+  - Extended `AKaelCharacter` with `MaxPoise`, `CurrentPoise`, `bIsStaggered`, `ApplyPoiseDamage`, `RestorePoise`, and dodge-roll slide Foley routing via `UEdrathAudioSubsystem`.
+  - Extended `AEdrathHUD` with `UpdateWeatherHazardHUD`, `UpdatePoiseAndStaggerHUD`, and `TriggerChronalImpactVignette`.
+- **Companion Weather Adaptation & Poise-Shatter Assist**:
+  - Extended `AEdrathCompanionAIController` with `AdaptFollowBehaviorToWeather` (tightening follow distance in low-visibility storms/fog) and `ReactToEnemyPoiseShatter` for synchronized follow-up attacks.
+- **Automated Verification Suites (4 New Suites)**:
+  - Added `FEdrathPerActorHitStopAndParryIntegrationTest`, `FEdrathKaelPoiseAndDodgeAudioIntegrationTest`, `FEdrathHUDWeatherAndPoiseFeedbackTest`, and `FEdrathCompanionWeatherAndPoiseAssistTest`.
+
 ## [0.13.0] - 2026-11-25
 
 ### Added
