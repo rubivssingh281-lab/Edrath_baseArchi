@@ -37,8 +37,18 @@ void ASettlementVillagerCharacter::BeginPlay()
 
     if (UEdrathNarrativeSubsystem* NarrativeSys = GetNarrativeSubsystem())
     {
-        NarrativeSys->OnSettlementLoopReset.AddDynamic(this, &ASettlementVillagerCharacter::HandleSettlementLoopReset);
+        NarrativeSys->OnSettlementLoopReset.AddUniqueDynamic(this, &ASettlementVillagerCharacter::HandleSettlementLoopReset);
     }
+}
+
+void ASettlementVillagerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (UEdrathNarrativeSubsystem* NarrativeSys = GetNarrativeSubsystem())
+    {
+        NarrativeSys->OnSettlementLoopReset.RemoveDynamic(this, &ASettlementVillagerCharacter::HandleSettlementLoopReset);
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void ASettlementVillagerCharacter::HandleSettlementLoopReset(int32 TotalLoopResets)

@@ -34,6 +34,7 @@ class EDRATH_API AAct1PreAlphaSliceDirector : public AActor
 public:
     AAct1PreAlphaSliceDirector();
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|PreAlpha|Actors")
     TObjectPtr<AKaelCharacter> KaelCharacter;

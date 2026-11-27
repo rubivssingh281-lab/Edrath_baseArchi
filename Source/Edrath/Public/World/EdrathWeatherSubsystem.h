@@ -101,6 +101,9 @@ public:
     FOnWeatherTransitioned OnWeatherTransitioned;
 
 private:
+    UFUNCTION()
+    void HandleThermalMitigationApplied(EEdrathThermalStatus NewThermalStatus, float MaxTargetFPS);
+
     void RecalculateHazardMetrics();
 
     UPROPERTY()

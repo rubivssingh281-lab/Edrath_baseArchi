@@ -24,6 +24,7 @@ public:
     ASettlementVillagerCharacter();
 
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Edrath|Components")
     TObjectPtr<USphereComponent> DialogueTriggerSphere;

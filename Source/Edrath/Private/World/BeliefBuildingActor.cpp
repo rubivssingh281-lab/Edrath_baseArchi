@@ -36,10 +36,23 @@ void ABeliefBuildingActor::BeginPlay()
     {
         if (UEdrathNarrativeSubsystem* Narrative = GetWorld()->GetGameInstance()->GetSubsystem<UEdrathNarrativeSubsystem>())
         {
-            Narrative->OnBeliefWeightChanged.AddDynamic(this, &ABeliefBuildingActor::EvaluateBeliefExistence);
+            Narrative->OnBeliefWeightChanged.AddUniqueDynamic(this, &ABeliefBuildingActor::EvaluateBeliefExistence);
             EvaluateBeliefExistence(BuildingBeliefTag, Narrative->GetCitizenBeliefWeight(BuildingBeliefTag));
         }
     }
+}
+
+void ABeliefBuildingActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (GetWorld() && GetWorld()->GetGameInstance())
+    {
+        if (UEdrathNarrativeSubsystem* Narrative = GetWorld()->GetGameInstance()->GetSubsystem<UEdrathNarrativeSubsystem>())
+        {
+            Narrative->OnBeliefWeightChanged.RemoveDynamic(this, &ABeliefBuildingActor::EvaluateBeliefExistence);
+        }
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void ABeliefBuildingActor::EvaluateBeliefExistence(FGameplayTag ChangedTag, float NewBeliefWeight)

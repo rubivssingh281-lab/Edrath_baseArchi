@@ -1,6 +1,8 @@
 #include "Camera/EdrathDualCameraComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Core/EdrathAudioSubsystem.h"
 #include "Core/EdrathHardwareOptimizationSubsystem.h"
+#include "UI/EdrathHUD.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
@@ -8,6 +10,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "CollisionQueryParams.h"
+#include "CollisionShape.h"
 
 UEdrathDualCameraComponent::UEdrathDualCameraComponent()
 {
@@ -56,13 +59,29 @@ void UEdrathDualCameraComponent::SetCameraPerspective(EEdrathCameraMode NewMode,
 
     CurrentMode = NewMode;
 
-    // Notify Hardware Optimization Subsystem (adjusts probe density, reflection downsample)
+    // Notify Hardware Optimization Subsystem & Audio Subsystem atomically
     if (OwnerCharacter && OwnerCharacter->GetWorld() && OwnerCharacter->GetWorld()->GetGameInstance())
     {
+        UGameInstance* GI = OwnerCharacter->GetWorld()->GetGameInstance();
         if (UEdrathHardwareOptimizationSubsystem* HardwareOptimization =
-            OwnerCharacter->GetWorld()->GetGameInstance()->GetSubsystem<UEdrathHardwareOptimizationSubsystem>())
+            GI->GetSubsystem<UEdrathHardwareOptimizationSubsystem>())
         {
             HardwareOptimization->ApplyCameraModeOptimization(NewMode);
+        }
+        if (UEdrathAudioSubsystem* AudioSubsystem = GI->GetSubsystem<UEdrathAudioSubsystem>())
+        {
+            AudioSubsystem->SetCameraPerspectiveAudioMode(NewMode);
+        }
+    }
+
+    if (OwnerCharacter)
+    {
+        if (APlayerController* PC = Cast<APlayerController>(OwnerCharacter->GetController()))
+        {
+            if (AEdrathHUD* HUD = Cast<AEdrathHUD>(PC->GetHUD()))
+            {
+                HUD->SetReticlePerspectiveMode(NewMode);
+            }
         }
     }
 

@@ -24,6 +24,7 @@ class EDRATH_API UEdrathTouchControlsWidget : public UUserWidget
 
 public:
     virtual void NativeConstruct() override;
+    virtual void NativeDestruct() override;
 
     /** Evaluates whether touch controls should be visible on the current platform */
     UFUNCTION(BlueprintCallable, Category="Edrath|UI|Touch")

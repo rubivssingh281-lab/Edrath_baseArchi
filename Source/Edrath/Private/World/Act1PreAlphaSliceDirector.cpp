@@ -26,17 +26,41 @@ void AAct1PreAlphaSliceDirector::BeginPlay()
 
     if (UEdrathNarrativeSubsystem* Narrative = GetNarrativeSubsystem())
     {
-        Narrative->OnBeliefWeightChanged.AddDynamic(this, &AAct1PreAlphaSliceDirector::HandleBeliefWeightChanged);
+        Narrative->OnBeliefWeightChanged.AddUniqueDynamic(this, &AAct1PreAlphaSliceDirector::HandleBeliefWeightChanged);
     }
 
     if (KaelCharacter && KaelCharacter->DualCameraComponent)
     {
-        KaelCharacter->DualCameraComponent->OnCameraPerspectiveChanged.AddDynamic(
+        KaelCharacter->DualCameraComponent->OnCameraPerspectiveChanged.AddUniqueDynamic(
             this, &AAct1PreAlphaSliceDirector::HandleCameraPerspectiveChanged);
     }
 
     SpawnZoneOneActors();
     EnterZone(EPreAlphaZoneState::Zone1_BattlefieldAwakening);
+}
+
+void AAct1PreAlphaSliceDirector::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (UEdrathNarrativeSubsystem* Narrative = GetNarrativeSubsystem())
+    {
+        Narrative->OnBeliefWeightChanged.RemoveDynamic(this, &AAct1PreAlphaSliceDirector::HandleBeliefWeightChanged);
+    }
+
+    if (KaelCharacter && KaelCharacter->DualCameraComponent)
+    {
+        KaelCharacter->DualCameraComponent->OnCameraPerspectiveChanged.RemoveDynamic(
+            this, &AAct1PreAlphaSliceDirector::HandleCameraPerspectiveChanged);
+    }
+
+    for (AForensicClueActor* Clue : RegisteredHouseClues)
+    {
+        if (Clue)
+        {
+            Clue->OnForensicClueInspected.RemoveDynamic(this, &AAct1PreAlphaSliceDirector::HandleForensicClueInspected);
+        }
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void AAct1PreAlphaSliceDirector::InitializeSlice(

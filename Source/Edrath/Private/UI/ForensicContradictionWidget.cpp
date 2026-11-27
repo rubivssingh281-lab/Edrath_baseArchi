@@ -2,6 +2,8 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Core/EdrathGameplayTags.h"
+#include "Core/EdrathTelemetrySubsystem.h"
+#include "Narrative/EdrathForensicSubsystem.h"
 #include "Narrative/EdrathNarrativeSubsystem.h"
 #include "Engine/World.h"
 #include "Engine/GameInstance.h"
@@ -140,12 +142,24 @@ FContradictionResolutionResult UForensicContradictionWidget::AttemptResolveContr
                 ResolutionResultLabel->SetText(Result.RevelationBody);
             }
 
-            // If this breakthrough breaks the settlement loop, notify the narrative subsystem
-            if (Rule.bBreaksSettlementLoop && GetWorld() && GetWorld()->GetGameInstance())
+            // Synchronize breakthrough into Forensic Matrix, Narrative Loop, and Telemetry
+            if (GetWorld() && GetWorld()->GetGameInstance())
             {
-                if (UEdrathNarrativeSubsystem* NarrativeSys = GetWorld()->GetGameInstance()->GetSubsystem<UEdrathNarrativeSubsystem>())
+                UGameInstance* GI = GetWorld()->GetGameInstance();
+                if (UEdrathForensicSubsystem* Forensics = GI->GetSubsystem<UEdrathForensicSubsystem>())
                 {
-                    NarrativeSys->BreakAct1SettlementLoop();
+                    Forensics->CommitBreakthrough(Rule.BreakthroughTag, SlottedClueA, SlottedClueB);
+                }
+                if (UEdrathTelemetrySubsystem* Telemetry = GI->GetSubsystem<UEdrathTelemetrySubsystem>())
+                {
+                    Telemetry->RecordNarrativeChoice(Rule.BreakthroughTag, TEXT("ContradictionResolved"));
+                }
+                if (Rule.bBreaksSettlementLoop)
+                {
+                    if (UEdrathNarrativeSubsystem* NarrativeSys = GI->GetSubsystem<UEdrathNarrativeSubsystem>())
+                    {
+                        NarrativeSys->BreakAct1SettlementLoop();
+                    }
                 }
             }
 

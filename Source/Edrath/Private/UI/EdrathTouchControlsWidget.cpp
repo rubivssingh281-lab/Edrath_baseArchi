@@ -11,30 +11,60 @@ void UEdrathTouchControlsWidget::NativeConstruct()
 
     if (AttackButton)
     {
-        AttackButton->OnClicked.AddDynamic(this, &UEdrathTouchControlsWidget::HandleAttackClicked);
+        AttackButton->OnClicked.AddUniqueDynamic(this, &UEdrathTouchControlsWidget::HandleAttackClicked);
     }
     if (DodgeButton)
     {
-        DodgeButton->OnClicked.AddDynamic(this, &UEdrathTouchControlsWidget::HandleDodgeClicked);
+        DodgeButton->OnClicked.AddUniqueDynamic(this, &UEdrathTouchControlsWidget::HandleDodgeClicked);
     }
     if (ParryButton)
     {
-        ParryButton->OnClicked.AddDynamic(this, &UEdrathTouchControlsWidget::HandleParryClicked);
+        ParryButton->OnClicked.AddUniqueDynamic(this, &UEdrathTouchControlsWidget::HandleParryClicked);
     }
     if (ShiftTimelineButton)
     {
-        ShiftTimelineButton->OnClicked.AddDynamic(this, &UEdrathTouchControlsWidget::HandleShiftTimelineClicked);
+        ShiftTimelineButton->OnClicked.AddUniqueDynamic(this, &UEdrathTouchControlsWidget::HandleShiftTimelineClicked);
     }
     if (EchoStrikeButton)
     {
-        EchoStrikeButton->OnClicked.AddDynamic(this, &UEdrathTouchControlsWidget::HandleEchoStrikeClicked);
+        EchoStrikeButton->OnClicked.AddUniqueDynamic(this, &UEdrathTouchControlsWidget::HandleEchoStrikeClicked);
     }
     if (ToggleLedgerButton)
     {
-        ToggleLedgerButton->OnClicked.AddDynamic(this, &UEdrathTouchControlsWidget::HandleToggleLedgerClicked);
+        ToggleLedgerButton->OnClicked.AddUniqueDynamic(this, &UEdrathTouchControlsWidget::HandleToggleLedgerClicked);
     }
 
     EvaluatePlatformVisibility();
+}
+
+void UEdrathTouchControlsWidget::NativeDestruct()
+{
+    if (AttackButton)
+    {
+        AttackButton->OnClicked.RemoveDynamic(this, &UEdrathTouchControlsWidget::HandleAttackClicked);
+    }
+    if (DodgeButton)
+    {
+        DodgeButton->OnClicked.RemoveDynamic(this, &UEdrathTouchControlsWidget::HandleDodgeClicked);
+    }
+    if (ParryButton)
+    {
+        ParryButton->OnClicked.RemoveDynamic(this, &UEdrathTouchControlsWidget::HandleParryClicked);
+    }
+    if (ShiftTimelineButton)
+    {
+        ShiftTimelineButton->OnClicked.RemoveDynamic(this, &UEdrathTouchControlsWidget::HandleShiftTimelineClicked);
+    }
+    if (EchoStrikeButton)
+    {
+        EchoStrikeButton->OnClicked.RemoveDynamic(this, &UEdrathTouchControlsWidget::HandleEchoStrikeClicked);
+    }
+    if (ToggleLedgerButton)
+    {
+        ToggleLedgerButton->OnClicked.RemoveDynamic(this, &UEdrathTouchControlsWidget::HandleToggleLedgerClicked);
+    }
+
+    Super::NativeDestruct();
 }
 
 void UEdrathTouchControlsWidget::EvaluatePlatformVisibility()

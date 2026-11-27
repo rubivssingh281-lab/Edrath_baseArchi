@@ -5,14 +5,36 @@ void UEdrathWeatherSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
-    CurrentThermalStatus = EEdrathThermalStatus::Nominal;
+    if (UEdrathHardwareOptimizationSubsystem* Hardware = Collection.InitializeDependency<UEdrathHardwareOptimizationSubsystem>())
+    {
+        CurrentThermalStatus = Hardware->GetCurrentThermalStatus();
+        Hardware->OnThermalMitigationApplied.AddUniqueDynamic(this, &UEdrathWeatherSubsystem::HandleThermalMitigationApplied);
+    }
+    else
+    {
+        CurrentThermalStatus = EEdrathThermalStatus::Nominal;
+    }
+
     CurrentHazardState.ActiveWeather = EEdrathWeatherType::ClearChronalSky;
     RecalculateHazardMetrics();
 }
 
 void UEdrathWeatherSubsystem::Deinitialize()
 {
+    if (UGameInstance* GI = GetGameInstance())
+    {
+        if (UEdrathHardwareOptimizationSubsystem* Hardware = GI->GetSubsystem<UEdrathHardwareOptimizationSubsystem>())
+        {
+            Hardware->OnThermalMitigationApplied.RemoveDynamic(this, &UEdrathWeatherSubsystem::HandleThermalMitigationApplied);
+        }
+    }
+
     Super::Deinitialize();
+}
+
+void UEdrathWeatherSubsystem::HandleThermalMitigationApplied(EEdrathThermalStatus NewThermalStatus, float)
+{
+    ApplyThermalStatusToWeather(NewThermalStatus);
 }
 
 void UEdrathWeatherSubsystem::SetActiveWeather(EEdrathWeatherType NewWeather)
