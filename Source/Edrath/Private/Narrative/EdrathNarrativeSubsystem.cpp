@@ -155,6 +155,15 @@ void UEdrathNarrativeSubsystem::RestoreSettlementLoopState(int32 Day, bool bBrok
     bAct1LoopBroken = bBroken;
 }
 
+void UEdrathNarrativeSubsystem::RestoreBuildingBeliefWeights(const TMap<FGameplayTag, float>& InWeights)
+{
+    BuildingBeliefWeights = InWeights;
+    for (const TPair<FGameplayTag, float>& Pair : BuildingBeliefWeights)
+    {
+        OnBeliefWeightChanged.Broadcast(Pair.Key, Pair.Value);
+    }
+}
+
 bool UEdrathNarrativeSubsystem::HasUnlockedFourthPath() const
 {
     int32 ClueCount = 0;

@@ -119,9 +119,11 @@ void UEdrathForensicSubsystem::SerializeToSaveGame(UEdrathSaveGame* SaveGame) co
     }
 
     SaveGame->DiscoveredClueTags.Empty();
+    SaveGame->SavedClueMatrixNodes.Empty();
     for (const auto& Kvp : ClueMatrix)
     {
         SaveGame->DiscoveredClueTags.Add(Kvp.Key);
+        SaveGame->SavedClueMatrixNodes.Add(Kvp.Value);
     }
 
     SaveGame->ResolvedBreakthroughTags = UnlockedBreakthroughs;
@@ -137,13 +139,27 @@ void UEdrathForensicSubsystem::DeserializeFromSaveGame(const UEdrathSaveGame* Sa
     ClueMatrix.Empty();
     UnlockedBreakthroughs = SaveGame->ResolvedBreakthroughTags;
 
-    for (const FGameplayTag& Tag : SaveGame->DiscoveredClueTags)
+    if (SaveGame->SavedClueMatrixNodes.Num() > 0)
     {
-        FEdrathClueMatrixNode Node;
-        Node.ClueTag = Tag;
-        Node.Region = EEdrathRegion::Veyl;
-        Node.Status = UnlockedBreakthroughs.Num() > 0 ? EEdrathClueInvestigationStatus::AnalyzedInLedger : EEdrathClueInvestigationStatus::Discovered;
-        Node.bIsContradictionResolved = false;
-        ClueMatrix.Add(Tag, Node);
+        for (const FEdrathClueMatrixNode& SavedNode : SaveGame->SavedClueMatrixNodes)
+        {
+            if (SavedNode.ClueTag.IsValid())
+            {
+                ClueMatrix.Add(SavedNode.ClueTag, SavedNode);
+            }
+        }
+    }
+    else
+    {
+        // Legacy fallback for saves created prior to full FEdrathClueMatrixNode serialization
+        for (const FGameplayTag& Tag : SaveGame->DiscoveredClueTags)
+        {
+            FEdrathClueMatrixNode Node;
+            Node.ClueTag = Tag;
+            Node.Region = EEdrathRegion::Veyl;
+            Node.Status = UnlockedBreakthroughs.Num() > 0 ? EEdrathClueInvestigationStatus::AnalyzedInLedger : EEdrathClueInvestigationStatus::Discovered;
+            Node.bIsContradictionResolved = false;
+            ClueMatrix.Add(Tag, Node);
+        }
     }
 }

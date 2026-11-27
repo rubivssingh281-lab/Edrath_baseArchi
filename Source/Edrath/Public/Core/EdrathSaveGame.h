@@ -71,8 +71,20 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Narrative")
     bool bUnlockedFourthPath = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Narrative")
+    TMap<FGameplayTag, float> BuildingBeliefWeights;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Narrative")
+    TMap<FGameplayTag, int32> ForestMutationVersions;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Narrative")
+    int32 TotalExteriorDaysElapsed = 0;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Forensics")
     TArray<FGameplayTag> DiscoveredClueTags;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Forensics")
+    TArray<FEdrathClueMatrixNode> SavedClueMatrixNodes;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|SaveData|Forensics")
     TArray<FGameplayTag> ResolvedBreakthroughTags;

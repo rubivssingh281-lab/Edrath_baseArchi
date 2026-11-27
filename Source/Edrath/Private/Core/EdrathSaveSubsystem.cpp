@@ -125,6 +125,9 @@ void UEdrathSaveSubsystem::PopulateSaveFromWorld(UEdrathSaveGame* SaveObject)
             SaveObject->UnchosenPossibilityTags = Narrative->GetUnchosenPossibilityTags();
             SaveObject->ClockUsagePrunedFuturesCount = Narrative->GetPrunedFuturesCount();
             SaveObject->bUnlockedFourthPath = Narrative->HasUnlockedFourthPath();
+            SaveObject->BuildingBeliefWeights = Narrative->GetBuildingBeliefWeights();
+            SaveObject->ForestMutationVersions = Narrative->GetForestMutationVersions();
+            SaveObject->TotalExteriorDaysElapsed = Narrative->GetTotalSimulatedExteriorDays();
         }
 
         if (UEdrathForensicSubsystem* Forensics = GI->GetSubsystem<UEdrathForensicSubsystem>())
@@ -155,6 +158,11 @@ void UEdrathSaveSubsystem::ApplySaveToWorld(const UEdrathSaveGame* SaveObject)
             Kael->CurrentHealth = SaveObject->PlayerHealth;
             Kael->MaxHealth = SaveObject->PlayerMaxHealth;
             Kael->CurrentRegion = SaveObject->CurrentRegion;
+
+            if (Kael->BlackClockComponent)
+            {
+                Kael->BlackClockComponent->SetClockStability(SaveObject->ClockStability);
+            }
         }
     }
 
@@ -166,6 +174,11 @@ void UEdrathSaveSubsystem::ApplySaveToWorld(const UEdrathSaveGame* SaveObject)
             Narrative->SetRegionalInstabilityMap(SaveObject->RegionalInstabilityMap);
             Narrative->RestoreEvidenceRecords(SaveObject->EvidenceRegistry);
             Narrative->SetCompanionStates(SaveObject->CompanionRelationshipMap);
+            Narrative->RestoreUnchosenPossibilityTags(SaveObject->UnchosenPossibilityTags);
+            Narrative->RestorePrunedFuturesCount(SaveObject->ClockUsagePrunedFuturesCount);
+            Narrative->RestoreBuildingBeliefWeights(SaveObject->BuildingBeliefWeights);
+            Narrative->RestoreForestMutationVersions(SaveObject->ForestMutationVersions);
+            Narrative->RestoreExteriorTimeDays(SaveObject->TotalExteriorDaysElapsed);
         }
 
         if (UEdrathForensicSubsystem* Forensics = GI->GetSubsystem<UEdrathForensicSubsystem>())

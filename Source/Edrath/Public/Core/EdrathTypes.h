@@ -179,3 +179,37 @@ struct FContradictionResolutionResult
     UPROPERTY(BlueprintReadOnly, Category="Edrath|Deduction")
     FGameplayTag BreakthroughTag;
 };
+
+UENUM(BlueprintType)
+enum class EEdrathClueInvestigationStatus : uint8
+{
+    Undiscovered            UMETA(DisplayName = "Undiscovered"),
+    Discovered              UMETA(DisplayName = "Discovered In World"),
+    AnalyzedInLedger        UMETA(DisplayName = "Analyzed In Forensic Ledger"),
+    LinkedToContradiction   UMETA(DisplayName = "Slotted In Contradiction Board"),
+    SynthesizedBreakthrough UMETA(DisplayName = "Synthesized Into Narrative Breakthrough")
+};
+
+USTRUCT(BlueprintType)
+struct FEdrathClueMatrixNode
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
+    FGameplayTag ClueTag;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
+    EEdrathRegion Region = EEdrathRegion::Veyl;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
+    EEdrathClueInvestigationStatus Status = EEdrathClueInvestigationStatus::Undiscovered;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
+    FText ObservationNotes;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
+    bool bIsContradictionResolved = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
+    FGameplayTag LinkedBreakthroughTag;
+};

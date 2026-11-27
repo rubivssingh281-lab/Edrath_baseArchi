@@ -99,6 +99,27 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
     void RestoreSettlementLoopState(int32 Day, bool bBroken);
 
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|State")
+    const TMap<FGameplayTag, float>& GetBuildingBeliefWeights() const { return BuildingBeliefWeights; }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void RestoreBuildingBeliefWeights(const TMap<FGameplayTag, float>& InWeights);
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|State")
+    const TMap<FGameplayTag, int32>& GetForestMutationVersions() const { return ForestMutationVersions; }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void RestoreForestMutationVersions(const TMap<FGameplayTag, int32>& InVersions) { ForestMutationVersions = InVersions; }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void RestoreUnchosenPossibilityTags(const TArray<FGameplayTag>& InTags) { UnchosenPossibilityTags = InTags; }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void RestorePrunedFuturesCount(int32 InCount) { ClockUsagePrunedFuturesCount = FMath::Max(0, InCount); }
+
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|State")
+    void RestoreExteriorTimeDays(int32 InDays) { TotalExteriorDaysElapsed = FMath::Max(0, InDays); }
+
     UFUNCTION(BlueprintPure, Category="Edrath|Narrative|Endings")
     bool HasUnlockedFourthPath() const;
 

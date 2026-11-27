@@ -7,48 +7,6 @@
 #include "Core/EdrathSaveGame.h"
 #include "EdrathForensicSubsystem.generated.h"
 
-/**
- * EEdrathClueInvestigationStatus
- * Lifecycle stages for forensic clues as Kael discovers, cross-references, and synthesizes them.
- */
-UENUM(BlueprintType)
-enum class EEdrathClueInvestigationStatus : uint8
-{
-    Undiscovered            UMETA(DisplayName = "Undiscovered"),
-    Discovered              UMETA(DisplayName = "Discovered In World"),
-    AnalyzedInLedger        UMETA(DisplayName = "Analyzed In Forensic Ledger"),
-    LinkedToContradiction   UMETA(DisplayName = "Slotted In Contradiction Board"),
-    SynthesizedBreakthrough UMETA(DisplayName = "Synthesized Into Narrative Breakthrough")
-};
-
-/**
- * FEdrathClueMatrixNode
- * Represents an individual forensic clue entry within the global memory reconstruction matrix.
- */
-USTRUCT(BlueprintType)
-struct FEdrathClueMatrixNode
-{
-    GENERATED_BODY()
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
-    FGameplayTag ClueTag;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
-    EEdrathRegion Region = EEdrathRegion::Veyl;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
-    EEdrathClueInvestigationStatus Status = EEdrathClueInvestigationStatus::Undiscovered;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
-    FText ObservationNotes;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
-    bool bIsContradictionResolved = false;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
-    FGameplayTag LinkedBreakthroughTag;
-};
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnClueMatrixDiscovered, FGameplayTag, ClueTag, EEdrathRegion, Region);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnBreakthroughMatrixUnlocked, FGameplayTag, BreakthroughTag, FGameplayTag, ClueA, FGameplayTag, ClueB);
 
