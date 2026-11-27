@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Core/EdrathTypes.h"
+#include "Engine/TimerHandle.h"
 #include "EdrathCombatFeedbackSubsystem.generated.h"
 
 /**
@@ -119,6 +120,14 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|CombatFeedback")
     void ApplyPerActorHitStopDilation(AActor* TargetActor, float DilationScale, float DurationSeconds);
 
+    /** Returns count of actors currently tracked with pending hit-stop restoration timers. */
+    UFUNCTION(BlueprintPure, Category="Edrath|CombatFeedback")
+    int32 GetActiveHitStopTimerCount() const { return ActiveActorHitStopTimers.Num(); }
+
+    /** Clears all pending hit-stop restoration timers and restores CustomTimeDilation = 1.0f on active actors. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|CombatFeedback")
+    void ClearAllActorHitStopTimers();
+
     UPROPERTY(BlueprintAssignable, Category="Edrath|CombatFeedback")
     FOnHitStopTriggered OnHitStopTriggered;
 
@@ -130,6 +139,8 @@ private:
 
     UPROPERTY()
     FEdrathHitStopProfile LastHitStopProfile;
+
+    TMap<TWeakObjectPtr<AActor>, FTimerHandle> ActiveActorHitStopTimers;
 
     float LastHitStopTimestampSeconds = -10.0f;
     float ActiveHitStopEndTimestampSeconds = -10.0f;

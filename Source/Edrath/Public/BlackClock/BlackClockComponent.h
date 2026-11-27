@@ -36,6 +36,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|BlackClock")
     void RestoreStability(float Amount);
 
+    UFUNCTION(BlueprintCallable, Category="Edrath|BlackClock")
+    void SetClockStability(float NewStability);
+
     UFUNCTION(BlueprintPure, Category="Edrath|BlackClock|EchoCombat")
     int32 GetActionHistoryBufferSize() const { return ActionHistoryBuffer.Num(); }
 

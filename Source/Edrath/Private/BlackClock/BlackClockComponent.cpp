@@ -1,7 +1,9 @@
 #include "BlackClock/BlackClockComponent.h"
 #include "BlackClock/EchoCombatComponent.h"
 #include "BlackClock/PossibilityShiftActor.h"
+#include "Character/KaelCharacter.h"
 #include "Core/EdrathHardwareOptimizationSubsystem.h"
+#include "Core/EdrathTelemetrySubsystem.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -24,7 +26,9 @@ void UBlackClockComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
         CurrentClockStability = FMath::Max(0.0f, CurrentClockStability - 2.5f * DeltaTime);
         if (CurrentClockStability <= 0.0f)
         {
-            TogglePossibilityShift(EEdrathRegion::Veyl);
+            const AKaelCharacter* KaelOwner = Cast<AKaelCharacter>(GetOwner());
+            const EEdrathRegion ActiveRegion = KaelOwner ? KaelOwner->CurrentRegion : EEdrathRegion::Veyl;
+            TogglePossibilityShift(ActiveRegion);
         }
     }
 }
@@ -49,6 +53,10 @@ bool UBlackClockComponent::TogglePossibilityShift(EEdrathRegion CurrentRegion)
             if (UEdrathNarrativeSubsystem* Narrative = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>())
             {
                 Narrative->RegisterBlackClockActivation(CurrentRegion, 5.0f);
+            }
+            if (UEdrathTelemetrySubsystem* Telemetry = GameInstance->GetSubsystem<UEdrathTelemetrySubsystem>())
+            {
+                Telemetry->RecordClockInstabilityEvent(CurrentRegion, 5.0f, Owner->GetActorLocation());
             }
         }
     }
@@ -169,6 +177,11 @@ bool UBlackClockComponent::InterpolateFrameAtTime(float TargetTimestamp, FEchoAc
 void UBlackClockComponent::RestoreStability(float Amount)
 {
     CurrentClockStability = FMath::Clamp(CurrentClockStability + Amount, 0.0f, MaxClockStability);
+}
+
+void UBlackClockComponent::SetClockStability(float NewStability)
+{
+    CurrentClockStability = FMath::Clamp(NewStability, 0.0f, MaxClockStability);
 }
 
 bool UBlackClockComponent::TriggerEchoStrike(float SecondsAgo, EEdrathRegion CurrentRegion, FEchoActionFrame& OutEchoFrame)

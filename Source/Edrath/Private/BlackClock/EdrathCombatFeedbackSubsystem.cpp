@@ -8,6 +8,7 @@
 void UEdrathCombatFeedbackSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+    ActiveActorHitStopTimers.Empty();
     LastHitStopTimestampSeconds = -10.0f;
     ActiveHitStopEndTimestampSeconds = -10.0f;
     LastHitStopProfile = FEdrathHitStopProfile();
@@ -15,6 +16,7 @@ void UEdrathCombatFeedbackSubsystem::Initialize(FSubsystemCollectionBase& Collec
 
 void UEdrathCombatFeedbackSubsystem::Deinitialize()
 {
+    ClearAllActorHitStopTimers();
     Super::Deinitialize();
 }
 
@@ -181,6 +183,23 @@ bool UEdrathCombatFeedbackSubsystem::IsHitStopActive(float CurrentWorldTimeSecon
            (CurrentWorldTimeSeconds <= ActiveHitStopEndTimestampSeconds);
 }
 
+void UEdrathCombatFeedbackSubsystem::ClearAllActorHitStopTimers()
+{
+    for (TPair<TWeakObjectPtr<AActor>, FTimerHandle>& Entry : ActiveActorHitStopTimers)
+    {
+        if (Entry.Key.IsValid())
+        {
+            AActor* TrackedActor = Entry.Key.Get();
+            TrackedActor->CustomTimeDilation = 1.0f;
+            if (UWorld* World = TrackedActor->GetWorld())
+            {
+                World->GetTimerManager().ClearTimer(Entry.Value);
+            }
+        }
+    }
+    ActiveActorHitStopTimers.Empty();
+}
+
 void UEdrathCombatFeedbackSubsystem::ApplyPerActorHitStopDilation(AActor* TargetActor, float DilationScale, float DurationSeconds)
 {
     if (!IsValid(TargetActor))
@@ -188,26 +207,49 @@ void UEdrathCombatFeedbackSubsystem::ApplyPerActorHitStopDilation(AActor* Target
         return;
     }
 
+    // Prune any destroyed actors whose weak pointers became invalid
+    for (auto It = ActiveActorHitStopTimers.CreateIterator(); It; ++It)
+    {
+        if (!It.Key().IsValid())
+        {
+            It.RemoveCurrent();
+        }
+    }
+
+    UWorld* World = TargetActor->GetWorld();
+    TWeakObjectPtr<AActor> WeakTarget(TargetActor);
+
+    // Cancel any pre-existing restoration timer so overlapping hits extend instead of truncating hit-stop
+    if (FTimerHandle* ExistingHandle = ActiveActorHitStopTimers.Find(WeakTarget))
+    {
+        if (World)
+        {
+            World->GetTimerManager().ClearTimer(*ExistingHandle);
+        }
+        ActiveActorHitStopTimers.Remove(WeakTarget);
+    }
+
     const float ClampedScale = FMath::Clamp(DilationScale, 0.01f, 1.0f);
     TargetActor->CustomTimeDilation = ClampedScale;
 
-    if (UWorld* World = TargetActor->GetWorld())
+    if (World && DurationSeconds > 0.0f)
     {
-        if (DurationSeconds > 0.0f)
-        {
-            TWeakObjectPtr<AActor> WeakTarget(TargetActor);
-            FTimerHandle RestoreHandle;
-            World->GetTimerManager().SetTimer(
-                RestoreHandle,
-                [WeakTarget]()
+        TWeakObjectPtr<UEdrathCombatFeedbackSubsystem> WeakSelf(this);
+        FTimerHandle& HandleRef = ActiveActorHitStopTimers.Add(WeakTarget);
+        World->GetTimerManager().SetTimer(
+            HandleRef,
+            [WeakSelf, WeakTarget]()
+            {
+                if (WeakTarget.IsValid())
                 {
-                    if (WeakTarget.IsValid())
-                    {
-                        WeakTarget->CustomTimeDilation = 1.0f;
-                    }
-                },
-                DurationSeconds,
-                false);
-        }
+                    WeakTarget->CustomTimeDilation = 1.0f;
+                }
+                if (WeakSelf.IsValid())
+                {
+                    WeakSelf->ActiveActorHitStopTimers.Remove(WeakTarget);
+                }
+            },
+            DurationSeconds,
+            false);
     }
 }
