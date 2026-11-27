@@ -34,9 +34,9 @@ To clean transient build packages and reclaim 20-50GB on 512GB laptop drives:
 
 ---
 
-## 🏗️ 14-Phase Master Polish Architecture
+## 🏗️ 15-Phase Master Polish Architecture
 
-The codebase features an end-to-end, deterministic 14-phase polish across all gameplay, graphics, memory, and narrative subsystems:
+The codebase features an end-to-end, deterministic 15-phase polish across all gameplay, graphics, memory, and narrative subsystems:
 
 | Phase | Subsystem & Technical Scope | Key C++ Classes & Shaders | Automated Verification Test |
 | :--- | :--- | :--- | :--- |
@@ -54,6 +54,7 @@ The codebase features an end-to-end, deterministic 14-phase polish across all ga
 | **Phase 12** | **Forensic Clue Matrix & Save State Serialization** | `UEdrathForensicSubsystem`, `UEdrathSaveGame` | `FEdrathForensicSubsystemClueMatrixTest` |
 | **Phase 13** | **Combat Hit-Stop, Poise Shatter & Cross-Subsystem Save Integration** | `UEdrathCombatFeedbackSubsystem`, `UEdrathSaveSubsystem` | `FEdrathCombatFeedbackAndHitStopTest`, `FEdrathFullSubsystemSaveLoadIntegrationTest` |
 | **Phase 14** | **Per-Actor Hit-Stop, Character Poise, HUD Vignettes & Companion Weather Assist** | `UEdrathEchoCombatComponent`, `AKaelCharacter`, `AEdrathHUD`, `AEdrathCompanionAIController` | `FEdrathPerActorHitStopAndParryIntegrationTest`, `FEdrathKaelPoiseAndDodgeAudioIntegrationTest`, `FEdrathHUDWeatherAndPoiseFeedbackTest`, `FEdrathCompanionWeatherAndPoiseAssistTest` |
+| **Phase 15** | **Architectural Integrity, IWYU Compliance, Lossless Save Fidelity & Closed-Loop Coupling** | `Scripts/ValidateProjectIntegrity.ps1`, `EdrathTypes.h`, `UEdrathCombatFeedbackSubsystem`, `UEdrathSaveSubsystem`, `UEdrathDualCameraComponent` | `FEdrathHitStopTimerOverwriteAndCleanupTest`, `FEdrathFullStateSaveLoadFidelityTest`, `FEdrathClosedLoopCouplingAndLifecycleTest` |
 
 ---
 

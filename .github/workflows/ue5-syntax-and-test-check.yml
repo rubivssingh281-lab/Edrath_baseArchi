@@ -13,21 +13,36 @@ jobs:
         with:
           lfs: true
 
-      - name: Validate Unreal source structure
+      - name: Validate Unreal source structure, IWYU & reflection
         shell: bash
         run: |
           set -euo pipefail
           test -f Edrath.uproject
           test -f Source/Edrath/Edrath.Build.cs
           while IFS= read -r -d '' header; do
-            if grep -Eq 'UENUM|USTRUCT|UCLASS|UPROPERTY|UFUNCTION' "$header"; then
-              generated_line=$(grep -n 'generated\.h"' "$header" | tail -n 1 | cut -d: -f1 || true)
-              include_line=$(grep -n '^#include' "$header" | tail -n 1 | cut -d: -f1 || true)
-              test -n "$generated_line"
+            if grep -Eq '\b(UENUM|USTRUCT|UCLASS|UPROPERTY|UFUNCTION)\b' "$header"; then
+              generated_count=$(grep -Ec '#include\s+"[A-Za-z0-9_]+\.generated\.h"' "$header" || true)
+              test "$generated_count" -eq 1
+              generated_line=$(grep -n 'generated\.h"' "$header" | tail -n 1 | cut -d: -f1)
+              include_line=$(grep -n '^\s*#include\b' "$header" | tail -n 1 | cut -d: -f1)
               test "$generated_line" -ge "$include_line"
-              test "$(sed -n "${generated_line}p" "$header" | grep -c 'generated\.h"')" -eq 1
+            fi
+            if grep -q 'UE_DECLARE_GAMEPLAY_TAG_EXTERN' "$header"; then
+              grep -Eq '#include\s+"NativeGameplayTags\.h"' "$header"
+            fi
+            if [[ "$header" == Source/Edrath/Public/* ]] && grep -Eq '\bFHitResult\b' "$header"; then
+              grep -Eq '#include\s+"Engine/HitResult\.h"' "$header"
             fi
           done < <(find Source -type f -name '*.h' -print0)
+
+      - name: Validate zero placeholder markers and clean line endings
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -rnE '\b(TODO|FIXME|PLACEHOLDER|NOT IMPLEMENTED)\b' Source Shaders Config
+          while IFS= read -r -d '' file; do
+            ! grep -q $'\r' "$file"
+          done < <(find Source Shaders Config -type f -print0)
 
       - name: Validate Git LFS tracking rules
         shell: bash

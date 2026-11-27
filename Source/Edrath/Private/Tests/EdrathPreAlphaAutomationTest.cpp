@@ -2765,6 +2765,216 @@ bool FEdrathCompanionWeatherAndPoiseAssistTest::RunTest(const FString&)
 
 
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathHitStopTimerOverwriteAndCleanupTest,
+    "Edrath.Combat.HitStopTimerOverwriteAndCleanupTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathHitStopTimerOverwriteAndCleanupTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathCombatFeedbackSubsystem* Feedback = GameInstance->GetSubsystem<UEdrathCombatFeedbackSubsystem>();
+    AActor* EnemyA = TestWorld->SpawnActor<AActor>();
+    AActor* EnemyB = TestWorld->SpawnActor<AActor>();
+    TestNotNull(TEXT("Feedback subsystem must exist"), Feedback);
+    TestNotNull(TEXT("EnemyA must spawn"), EnemyA);
+    TestNotNull(TEXT("EnemyB must spawn"), EnemyB);
+
+    if (Feedback && EnemyA && EnemyB)
+    {
+        // Overlapping hit-stops on EnemyA must overwrite handle rather than leaking duplicate timers
+        Feedback->ApplyPerActorHitStopDilation(EnemyA, 0.10f, 0.25f);
+        Feedback->ApplyPerActorHitStopDilation(EnemyA, 0.05f, 0.30f);
+        TestEqual(TEXT("Overlapping hit-stops on same actor must track 1 timer handle"),
+            Feedback->GetActiveHitStopTimerCount(), 1);
+        TestEqual(TEXT("EnemyA dilation must reflect overwritten hit-stop scale"),
+            EnemyA->CustomTimeDilation, 0.05f);
+
+        Feedback->ApplyPerActorHitStopDilation(EnemyB, 0.08f, 0.20f);
+        TestEqual(TEXT("Tracking two distinct actors must report 2 active handles"),
+            Feedback->GetActiveHitStopTimerCount(), 2);
+
+        // ClearAllActorHitStopTimers (also invoked by Deinitialize) must restore dilation and empty map
+        Feedback->ClearAllActorHitStopTimers();
+        TestEqual(TEXT("Timer map must be empty after cleanup"),
+            Feedback->GetActiveHitStopTimerCount(), 0);
+        TestEqual(TEXT("EnemyA CustomTimeDilation must restore to 1.0f"), EnemyA->CustomTimeDilation, 1.0f);
+        TestEqual(TEXT("EnemyB CustomTimeDilation must restore to 1.0f"), EnemyB->CustomTimeDilation, 1.0f);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathFullStateSaveLoadFidelityTest,
+    "Edrath.SaveSystem.FullStateSaveLoadFidelityTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathFullStateSaveLoadFidelityTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathSaveSubsystem* SaveSubsystem = GameInstance->GetSubsystem<UEdrathSaveSubsystem>();
+    UEdrathForensicSubsystem* ForensicSubsystem = GameInstance->GetSubsystem<UEdrathForensicSubsystem>();
+    UEdrathNarrativeSubsystem* NarrativeSubsystem = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>();
+
+    TestNotNull(TEXT("Save subsystem must instantiate"), SaveSubsystem);
+    TestNotNull(TEXT("Forensic subsystem must instantiate"), ForensicSubsystem);
+    TestNotNull(TEXT("Narrative subsystem must instantiate"), NarrativeSubsystem);
+
+    if (SaveSubsystem && ForensicSubsystem && NarrativeSubsystem)
+    {
+        // Populate non-default clue in Nhal with SynthesizedBreakthrough status and custom notes
+        const FText ExpectedNote = FText::FromString(TEXT("Nhal ledger entry confirms erased lineage."));
+        ForensicSubsystem->RegisterDiscoveredClue(EdrathGameplayTags::Twist3, EEdrathRegion::Nhal, ExpectedNote);
+        ForensicSubsystem->CommitBreakthrough(EdrathGameplayTags::Twist3, EdrathGameplayTags::Twist3, EdrathGameplayTags::StoryAct4DeadChildProphecy);
+
+        NarrativeSubsystem->SetCitizenBeliefWeight(EdrathGameplayTags::RegionVeyl, 0.25f);
+        NarrativeSubsystem->RecordForestMutation(EdrathGameplayTags::Act3, FText::FromString(TEXT("Hollowgreen Root Mutated")));
+        NarrativeSubsystem->AddUnchosenPossibilityTag(EdrathGameplayTags::QuestWeddingSeverMemoryEcho);
+        NarrativeSubsystem->AdvanceExteriorTimeDays(42);
+        NarrativeSubsystem->RegisterBlackClockActivation(EEdrathRegion::Nhal, 7.5f);
+
+        const FString FidelitySlot = TEXT("Edrath_Fidelity_Roundtrip_Slot");
+        const bool bSaved = SaveSubsystem->SaveGameToSlot(FidelitySlot, 0);
+        TestTrue(TEXT("Full fidelity save must succeed"), bSaved);
+
+        if (bSaved)
+        {
+            // Mutate live state before reloading to prove full restoration
+            NarrativeSubsystem->SetCitizenBeliefWeight(EdrathGameplayTags::RegionVeyl, 1.0f);
+            NarrativeSubsystem->RemoveUnchosenPossibilityTag(EdrathGameplayTags::QuestWeddingSeverMemoryEcho);
+            NarrativeSubsystem->RestoreExteriorTimeDays(0);
+            NarrativeSubsystem->RestorePrunedFuturesCount(0);
+
+            const bool bLoaded = SaveSubsystem->LoadGameFromSlot(FidelitySlot, 0);
+            TestTrue(TEXT("Full fidelity load must succeed"), bLoaded);
+
+            // Verify lossless Forensic node fidelity
+            TestEqual(TEXT("Twist3 clue status must remain SynthesizedBreakthrough"),
+                ForensicSubsystem->GetClueStatus(EdrathGameplayTags::Twist3),
+                EEdrathClueInvestigationStatus::SynthesizedBreakthrough);
+            const TArray<FEdrathClueMatrixNode> NhalClues = ForensicSubsystem->GetCluesForRegion(EEdrathRegion::Nhal);
+            TestEqual(TEXT("Nhal region must still retain 1 restored clue node"), NhalClues.Num(), 1);
+            if (NhalClues.Num() == 1)
+            {
+                TestEqual(TEXT("Observation notes must survive save/load intact"),
+                    NhalClues[0].ObservationNotes.ToString(), ExpectedNote.ToString());
+                TestTrue(TEXT("Contradiction resolved flag must remain true"), NhalClues[0].bIsContradictionResolved);
+            }
+
+            // Verify lossless Narrative world state fidelity
+            TestEqual(TEXT("Belief weight must be restored to 0.25f"),
+                NarrativeSubsystem->GetCitizenBeliefWeight(EdrathGameplayTags::RegionVeyl), 0.25f);
+            TestEqual(TEXT("Forest mutation version must be restored to 1"),
+                NarrativeSubsystem->GetForestMutationVersion(EdrathGameplayTags::Act3), 1);
+            TestTrue(TEXT("Unchosen possibility tag must be restored"),
+                NarrativeSubsystem->GetUnchosenPossibilityTags().Contains(EdrathGameplayTags::QuestWeddingSeverMemoryEcho));
+            TestEqual(TEXT("Pruned futures count must be restored to 1"),
+                NarrativeSubsystem->GetPrunedFuturesCount(), 1);
+            TestEqual(TEXT("Simulated exterior days must be restored to 42"),
+                NarrativeSubsystem->GetTotalSimulatedExteriorDays(), 42);
+
+            SaveSubsystem->DeleteSaveSlot(FidelitySlot, 0);
+        }
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathClosedLoopCouplingAndLifecycleTest,
+    "Edrath.Architecture.ClosedLoopCouplingAndLifecycleTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathClosedLoopCouplingAndLifecycleTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathHardwareOptimizationSubsystem* Hardware = GameInstance->GetSubsystem<UEdrathHardwareOptimizationSubsystem>();
+    UEdrathWeatherSubsystem* Weather = GameInstance->GetSubsystem<UEdrathWeatherSubsystem>();
+    UEdrathAudioSubsystem* Audio = GameInstance->GetSubsystem<UEdrathAudioSubsystem>();
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+
+    TestNotNull(TEXT("Hardware subsystem must exist"), Hardware);
+    TestNotNull(TEXT("Weather subsystem must exist"), Weather);
+    TestNotNull(TEXT("Audio subsystem must exist"), Audio);
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+
+    if (Hardware && Weather && Audio && Kael && Kael->DualCameraComponent)
+    {
+        // 1. Verify Thermal Mitigation -> Weather Particle Scaling Closed Loop
+        Weather->SetActiveWeather(EEdrathWeatherType::CrownBlizzard);
+        Hardware->ApplyThermalMitigation(EEdrathThermalStatus::Critical);
+        TestEqual(TEXT("Thermal Critical event must automatically throttle Weather particle count to 375"),
+            Weather->CalculateThermalScaledParticleCount(1000), 375);
+
+        // 2. Verify Camera Perspective -> Audio Profile Closed Loop
+        Weather->SetActiveWeather(EEdrathWeatherType::ClearChronalSky);
+        Audio->SetAcousticProfile(EEdrathAcousticProfile::ExteriorOpenField);
+        Kael->DualCameraComponent->SetCameraPerspective(EEdrathCameraMode::InteriorThirdPerson, nullptr);
+        TestEqual(TEXT("Switching Kael camera to interior must automatically update AudioSubsystem profile"),
+            Audio->GetActiveAcousticProfile(), EEdrathAcousticProfile::InteriorClaustrophobicCrypt);
+
+        // 3. Verify Villager & Belief Actor Clean Lifecycle Destruction
+        ASettlementVillagerCharacter* Villager = TestWorld->SpawnActor<ASettlementVillagerCharacter>();
+        ABeliefBuildingActor* Shrine = TestWorld->SpawnActor<ABeliefBuildingActor>();
+        if (Villager && Shrine)
+        {
+            Villager->Destroy();
+            Shrine->Destroy();
+            if (UEdrathNarrativeSubsystem* Narrative = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>())
+            {
+                // Broadcasting after actor EndPlay cleanup must execute safely with zero dangling callbacks
+                Narrative->SetCitizenBeliefWeight(EdrathGameplayTags::RegionVeyl, 0.1f);
+                Narrative->AdvanceSettlementDay();
+            }
+        }
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
 
 
 

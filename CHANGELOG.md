@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
 
+## [0.15.0] - 2026-11-27
+
+### Fixed & Improved (Architectural Integrity & Lifecycle Pass)
+- **Safe Per-Actor Hit-Stop Timer Management**:
+  - Updated `UEdrathCombatFeedbackSubsystem` (`Source/Edrath/Public/BlackClock/EdrathCombatFeedbackSubsystem.h`, `Source/Edrath/Private/BlackClock/EdrathCombatFeedbackSubsystem.cpp`) to track `ActiveActorHitStopTimers` per `TWeakObjectPtr<AActor>`, preventing overlapping multi-hit freeze frames from truncating each other and restoring `CustomTimeDilation = 1.0f` during `Deinitialize()`.
+- **Lossless Cross-Subsystem Save/Load Fidelity**:
+  - Consolidated `EEdrathClueInvestigationStatus` and `FEdrathClueMatrixNode` into `Core/EdrathTypes.h` to eliminate circular header dependencies while enabling full clue node serialization (`Region`, `ObservationNotes`, `Status`, `bIsContradictionResolved`, `LinkedBreakthroughTag`) inside `UEdrathSaveGame`.
+  - Extended `UEdrathSaveGame`, `UEdrathNarrativeSubsystem`, `UBlackClockComponent`, and `UEdrathSaveSubsystem` so `ApplySaveToWorld` restores `ClockStability`, `UnchosenPossibilityTags`, `ClockUsagePrunedFuturesCount`, `BuildingBeliefWeights`, `ForestMutationVersions`, and `TotalExteriorDaysElapsed` alongside `ForensicSubsystem` and `WeatherSubsystem`.
+- **UE 5.5+ IWYU Header & Reflection Compliance**:
+  - Added `#include "NativeGameplayTags.h"` to `Source/Edrath/Public/Core/EdrathGameplayTags.h` for explicit `UE_DECLARE_GAMEPLAY_TAG_EXTERN` builds.
+  - Added `#include "Engine/HitResult.h"` before `*.generated.h` across all public headers exposing `FHitResult` and `#include "CollisionShape.h"` where `FCollisionShape` is constructed.
+- **Delegate Lifecycle Hygiene & Closed-Loop Subsystem Coupling**:
+  - Added `EndPlay` / `NativeDestruct` `RemoveDynamic` cleanup and `AddUniqueDynamic` guards to `ASettlementVillagerCharacter`, `ABeliefBuildingActor`, `AAct1PreAlphaSliceDirector`, and `UEdrathTouchControlsWidget`.
+  - Wired `UEdrathDualCameraComponent::SetCameraPerspective` to atomically update `UEdrathAudioSubsystem` and `AEdrathHUD`, `UEdrathWeatherSubsystem` to react automatically to `UEdrathHardwareOptimizationSubsystem::OnThermalMitigationApplied`, `UBlackClockComponent` to record instability telemetry, and `UForensicContradictionWidget` to sync breakthroughs directly into `UEdrathForensicSubsystem`.
+- **Integrity Validator & CI Gate**:
+  - Added `Scripts/ValidateProjectIntegrity.ps1` and expanded `.github/workflows/ue5-syntax-and-test-check.yml` to enforce IWYU headers, include resolution, LF line endings, delegate hygiene, and zero placeholder markers.
+  - Added 3 verification suites in `EdrathPreAlphaAutomationTest.cpp`: `FEdrathHitStopTimerOverwriteAndCleanupTest`, `FEdrathFullStateSaveLoadFidelityTest`, and `FEdrathClosedLoopCouplingAndLifecycleTest`.
+
 ## [0.14.0] - 2026-11-25
 
 ### Added
