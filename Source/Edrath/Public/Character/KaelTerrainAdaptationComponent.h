@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Engine/HitResult.h"
 #include "World/EdrathTerrainSubsystem.h"
 #include "KaelTerrainAdaptationComponent.generated.h"
 

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "BlackClock/PossibilityShiftActor.h"
+#include "Engine/HitResult.h"
 #include "Act1GorgeBridgeActor.generated.h"
 
 class UBoxComponent;

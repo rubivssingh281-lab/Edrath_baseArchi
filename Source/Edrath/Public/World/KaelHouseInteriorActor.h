@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Core/EdrathTypes.h"
+#include "Engine/HitResult.h"
 #include "KaelHouseInteriorActor.generated.h"
 
 class UBoxComponent;

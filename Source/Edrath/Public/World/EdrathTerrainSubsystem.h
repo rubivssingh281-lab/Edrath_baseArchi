@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Chaos/ChaosEngineInterface.h"
+#include "Engine/HitResult.h"
 #include "EdrathTerrainSubsystem.generated.h"
 
 /**

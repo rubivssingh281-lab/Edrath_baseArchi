@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameplayTagContainer.h"
+#include "Engine/HitResult.h"
 #include "DyingSoldierActor.generated.h"
 
 class USphereComponent;

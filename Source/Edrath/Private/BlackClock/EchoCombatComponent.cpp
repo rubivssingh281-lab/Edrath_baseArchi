@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "Engine/HitResult.h"
 #include "CollisionQueryParams.h"
+#include "CollisionShape.h"
 
 UEdrathEchoCombatComponent::UEdrathEchoCombatComponent()
 {
