@@ -34,9 +34,9 @@ To clean transient build packages and reclaim 20-50GB on 512GB laptop drives:
 
 ---
 
-## 🏗️ 15-Phase Master Polish Architecture
+## 🏗️ 19-Phase Master Polish Architecture
 
-The codebase features an end-to-end, deterministic 15-phase polish across all gameplay, graphics, memory, and narrative subsystems:
+The codebase features an end-to-end, deterministic 19-phase polish across all gameplay, graphics, memory, and narrative subsystems:
 
 | Phase | Subsystem & Technical Scope | Key C++ Classes & Shaders | Automated Verification Test |
 | :--- | :--- | :--- | :--- |
@@ -55,6 +55,10 @@ The codebase features an end-to-end, deterministic 15-phase polish across all ga
 | **Phase 13** | **Combat Hit-Stop, Poise Shatter & Cross-Subsystem Save Integration** | `UEdrathCombatFeedbackSubsystem`, `UEdrathSaveSubsystem` | `FEdrathCombatFeedbackAndHitStopTest`, `FEdrathFullSubsystemSaveLoadIntegrationTest` |
 | **Phase 14** | **Per-Actor Hit-Stop, Character Poise, HUD Vignettes & Companion Weather Assist** | `UEdrathEchoCombatComponent`, `AKaelCharacter`, `AEdrathHUD`, `AEdrathCompanionAIController` | `FEdrathPerActorHitStopAndParryIntegrationTest`, `FEdrathKaelPoiseAndDodgeAudioIntegrationTest`, `FEdrathHUDWeatherAndPoiseFeedbackTest`, `FEdrathCompanionWeatherAndPoiseAssistTest` |
 | **Phase 15** | **Architectural Integrity, IWYU Compliance, Lossless Save Fidelity & Closed-Loop Coupling** | `Scripts/ValidateProjectIntegrity.ps1`, `EdrathTypes.h`, `UEdrathCombatFeedbackSubsystem`, `UEdrathSaveSubsystem`, `UEdrathDualCameraComponent` | `FEdrathHitStopTimerOverwriteAndCleanupTest`, `FEdrathFullStateSaveLoadFidelityTest`, `FEdrathClosedLoopCouplingAndLifecycleTest` |
+| **Phase 16** | **Unified World Interaction Contract & Scanner** | `IEdrathInteractableInterface`, `UKaelInteractionScannerComponent`, `AForensicClueActor`, `ASettlementVillagerCharacter` | `FEdrathInteractionInterfaceAndScannerTest` |
+| **Phase 17** | **Full Keyboard, Gamepad & Touch Input Pipeline** | `AEdrathPlayerController`, `UEdrathTouchControlsWidget`, `UEdrathDualCameraComponent` | `FEdrathPlayerControllerAndTouchPipelineTest` |
+| **Phase 18** | **Chronal Combat Interface & Act II Maevra Pursuer Boss** | `IEdrathChronalCombatInterface`, `AMaevraPursuerBossCharacter`, `UEdrathEchoCombatComponent` | `FEdrathChronalCombatAndMaevraEncounterTest` |
+| **Phase 19** | **HLSL/MPC VisualFX Subsystem & Epilogue Dossier Synthesizer** | `UEdrathVisualFXSubsystem`, `FEdrathEpilogueDossier`, `UEdrathNarrativeSubsystem` | `FEdrathVisualFXAndEpilogueDossierTest` |
 
 ---
 

@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - Nanite asset ingestion for Veyl gothic cathedral ruins and Hollowgreen root structures.
 
+## [0.16.0] - 2026-11-28
+
+### Added (Phases 16–19 Major Systems Expansion)
+- **Unified World Interaction Interface & Scanner** (`Phase 16`):
+  - Implemented `IEdrathInteractableInterface` (`Source/Edrath/Public/Core/EdrathInteractableInterface.h`) and `UKaelInteractionScannerComponent` (`Source/Edrath/Public/Character/KaelInteractionScannerComponent.h`, `Source/Edrath/Private/Character/KaelInteractionScannerComponent.cpp`) scoring candidates by proximity + forward alignment and driving `AEdrathHUD` / `UEdrathReticleWidget` inspection prompts.
+  - Bound `IEdrathInteractableInterface` to `AForensicClueActor`, `ASettlementVillagerCharacter`, `ABuriedFutureGraveActor`, `ADragonMemoryHoardActor`, and wired `InteractionScannerComponent` onto `AKaelCharacter`.
+- **Full Keyboard, Gamepad & Touch Input Pipeline** (`Phase 17`):
+  - Expanded `AEdrathPlayerController` (`Source/Edrath/Public/Core/EdrathPlayerController.h`, `Source/Edrath/Private/Core/EdrathPlayerController.cpp`) with perspective-normalized planar movement (`ExteriorBirdsEye` yaw vs. `InteriorThirdPerson`), camera look/zoom/45-degree yaw snapping (`GetExteriorYawDegrees`), sword slash, dodge, parry, Echo Strike, Possibility Shift, `[E]` Interact, Ledger/Contradiction toggles, and `UEdrathTouchControlsWidget` delegation with `EndPlay` cleanup.
+- **Chronal Combat Contract & Act II Boss Encounter** (`Phase 18`):
+  - Implemented `IEdrathChronalCombatInterface` (`Source/Edrath/Public/Core/EdrathChronalCombatInterface.h`) across `ABattlefieldWraithCharacter`, `AFirstArchivistBossCharacter`, and `UEdrathEchoCombatComponent` (including deduplicated ghost sweep target hits and `DeliverChronalStrikeToTarget`).
+  - Implemented `AMaevraPursuerBossCharacter` (`Source/Edrath/Public/Character/MaevraPursuerBossCharacter.h`, `Source/Edrath/Private/Character/MaevraPursuerBossCharacter.cpp`) featuring Act II alchemical barriers, poise shatter transitions, and `[E]` recruitment via the erased-marriage Black Clock pact.
+- **Shader/MPC VisualFX Subsystem & Epilogue Dossier Synthesizer** (`Phase 19`):
+  - Implemented `UEdrathVisualFXSubsystem` (`Source/Edrath/Public/Core/EdrathVisualFXSubsystem.h`, `Source/Edrath/Private/Core/EdrathVisualFXSubsystem.cpp`) driving interpolated shader parameters (`TimelineDissolveAlpha`, `ChromaticGlitchIntensity`, `FrostGlazeMask`, `SporeHazeMask`, `ChronalRippleIntensity`, `ClockInstabilityDesaturation`) synced to `UEdrathWeatherSubsystem`, `UEdrathCombatFeedbackSubsystem`, `UBlackClockComponent`, and `UForensicContradictionWidget`.
+  - Added `FEdrathEpilogueDossier` and `CompileEpilogueDossier` in `UEdrathNarrativeSubsystem` evaluating twist unlocks, companion outcomes, pruned futures, and ending philosophy resolution.
+- **Automated Verification Suites (4 New Suites)**:
+  - Added `FEdrathInteractionInterfaceAndScannerTest`, `FEdrathPlayerControllerAndTouchPipelineTest`, `FEdrathChronalCombatAndMaevraEncounterTest`, and `FEdrathVisualFXAndEpilogueDossierTest`.
+
 ## [0.15.0] - 2026-11-27
 
 ### Fixed & Improved (Architectural Integrity & Lifecycle Pass)

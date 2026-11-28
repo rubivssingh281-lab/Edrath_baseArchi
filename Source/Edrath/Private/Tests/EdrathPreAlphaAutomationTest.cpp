@@ -59,6 +59,12 @@
 #include "World/EdrathWeatherSubsystem.h"
 #include "Narrative/EdrathForensicSubsystem.h"
 #include "BlackClock/EdrathCombatFeedbackSubsystem.h"
+#include "Core/EdrathInteractableInterface.h"
+#include "Core/EdrathChronalCombatInterface.h"
+#include "Core/EdrathPlayerController.h"
+#include "Core/EdrathVisualFXSubsystem.h"
+#include "Character/KaelInteractionScannerComponent.h"
+#include "Character/MaevraPursuerBossCharacter.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FEdrathPreAlphaVerticalSliceTest,
@@ -2966,6 +2972,244 @@ bool FEdrathClosedLoopCouplingAndLifecycleTest::RunTest(const FString&)
                 Narrative->AdvanceSettlementDay();
             }
         }
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathInteractionInterfaceAndScannerTest,
+    "Edrath.Interaction.InterfaceAndScannerTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathInteractionInterfaceAndScannerTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    ABuriedFutureGraveActor* Grave = TestWorld->SpawnActor<ABuriedFutureGraveActor>();
+    AForensicClueActor* Clue = TestWorld->SpawnActor<AForensicClueActor>();
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("Grave must spawn"), Grave);
+    TestNotNull(TEXT("ForensicClue must spawn"), Clue);
+
+    if (Kael && Kael->InteractionScannerComponent && Grave && Clue)
+    {
+        Kael->SetActorLocation(FVector::ZeroVector);
+        Clue->EvidenceTag = EdrathGameplayTags::EvidenceHandwriting;
+        Clue->bRequiresInteriorCamera = false;
+        Clue->SetActorLocation(FVector(200.0f, 0.0f, 0.0f));
+        Grave->SetActorLocation(FVector(80.0f, 0.0f, 0.0f));
+
+        TArray<AActor*> Candidates{Clue, Grave};
+        AActor* Selected = Kael->InteractionScannerComponent->SelectBestCandidate(Candidates);
+        TestEqual(TEXT("Closer forward grave must win candidate scoring"), Selected, static_cast<AActor*>(Grave));
+
+        const bool bExhumedViaInterface = Kael->InteractionScannerComponent->TryInteractWithFocusedTarget();
+        TestTrue(TEXT("TryInteractWithFocusedTarget must exhume grave via IEdrathInteractableInterface"), bExhumedViaInterface);
+        TestTrue(TEXT("Grave must now be marked exhumed"), Grave->IsExhumed());
+
+        // One-shot grave should now fail CanInteract leaving Clue as next best candidate
+        AActor* SecondBest = Kael->InteractionScannerComponent->SelectBestCandidate(Candidates);
+        TestEqual(TEXT("After exhumation, ForensicClue must become active focus"), SecondBest, static_cast<AActor*>(Clue));
+        const bool bClueInspected = Kael->InteractionScannerComponent->TryInteractWithFocusedTarget();
+        TestTrue(TEXT("ForensicClue must be inspected via unified interface"), bClueInspected);
+        TestTrue(TEXT("ForensicClue must record inspected flag"), Clue->HasBeenInspected());
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathPlayerControllerAndTouchPipelineTest,
+    "Edrath.Input.PlayerControllerAndTouchPipelineTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathPlayerControllerAndTouchPipelineTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AEdrathPlayerController* PC = TestWorld->SpawnActor<AEdrathPlayerController>();
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    UEdrathTouchControlsWidget* TouchWidget = NewObject<UEdrathTouchControlsWidget>(TestWorld);
+
+    TestNotNull(TEXT("PlayerController must spawn"), PC);
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("TouchControlsWidget must instantiate"), TouchWidget);
+
+    if (PC && Kael && Kael->DualCameraComponent && TouchWidget)
+    {
+        PC->Possess(Kael);
+
+        const float InitialYaw = Kael->DualCameraComponent->GetExteriorYawDegrees();
+        PC->SnapCameraYawRight();
+        TestEqual(TEXT("SnapCameraYawRight must rotate exterior camera +45 degrees"),
+            Kael->DualCameraComponent->GetExteriorYawDegrees(), InitialYaw + 45.0f);
+
+        const float InitialArm = Kael->DualCameraComponent->GetExteriorTargetArmLength();
+        PC->ProcessZoomInput(1.0f);
+        TestTrue(TEXT("Positive zoom input must tighten ExteriorBirdsEye arm length"),
+            Kael->DualCameraComponent->GetExteriorTargetArmLength() < InitialArm);
+
+        // Verify touch overlay binding dispatches Possibility Shift cleanly
+        PC->BindTouchControlsWidget(TouchWidget);
+        TouchWidget->OnShiftTimelinePressed.Broadcast();
+        if (Kael->BlackClockComponent)
+        {
+            TestEqual(TEXT("Touch ShiftTimeline button must shift Kael Black Clock to RejectedTimeline"),
+                Kael->BlackClockComponent->GetActiveTimelineState(), ETimelineState::RejectedTimeline);
+        }
+
+        PC->UnbindTouchControlsWidget();
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathChronalCombatAndMaevraEncounterTest,
+    "Edrath.Combat.ChronalCombatAndMaevraEncounterTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathChronalCombatAndMaevraEncounterTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    AKaelCharacter* Kael = TestWorld->SpawnActor<AKaelCharacter>();
+    AMaevraPursuerBossCharacter* Maevra = TestWorld->SpawnActor<AMaevraPursuerBossCharacter>();
+    AFirstArchivistBossCharacter* Archivist = TestWorld->SpawnActor<AFirstArchivistBossCharacter>();
+
+    TestNotNull(TEXT("Kael must spawn"), Kael);
+    TestNotNull(TEXT("Maevra Pursuer Boss must spawn"), Maevra);
+    TestNotNull(TEXT("First Archivist Boss must spawn"), Archivist);
+
+    if (Kael && Kael->EchoCombatComponent && Maevra && Archivist)
+    {
+        // 1. Deliver Echo Strike directly through IEdrathChronalCombatInterface -> breaks Maevra alchemical barrier
+        const float BarrierDmg = Kael->EchoCombatComponent->DeliverChronalStrikeToTarget(Maevra, 250.0f, 100.0f, true);
+        TestTrue(TEXT("Echo Strike must bypass Maevra barrier with bonus multiplier"), BarrierDmg > 300.0f);
+        TestFalse(TEXT("Maevra alchemical barrier must shatter on Echo Strike"), Maevra->bAlchemicalBarrierActive);
+        TestEqual(TEXT("Dropping Maevra below 35% HP must transition to ClockBargainOffered"),
+            Maevra->GetEncounterState(), EMaevraEncounterState::ClockBargainOffered);
+
+        // 2. Recruit Maevra via unified IEdrathInteractableInterface
+        TestTrue(TEXT("Kneeling Maevra must be interactable for recruitment"),
+            IEdrathInteractableInterface::Execute_CanInteract(Maevra, Kael));
+        const bool bRecruited = IEdrathInteractableInterface::Execute_ExecuteInteraction(Maevra, Kael);
+        TestTrue(TEXT("Recruitment pact must succeed"), bRecruited);
+        TestTrue(TEXT("Maevra must enter RecruitedAlly state"), Maevra->IsRecruited());
+
+        // 3. Verify First Archivist also responds to IEdrathChronalCombatInterface
+        const float ArchivistDmg = Kael->EchoCombatComponent->DeliverChronalStrikeToTarget(Archivist, 200.0f, 50.0f, true);
+        TestEqual(TEXT("Archivist must take Phase 1 damage through IEdrathChronalCombatInterface"), ArchivistDmg, 200.0f);
+    }
+
+    TestWorld->DestroyWorld(false);
+    return !HasAnyErrors();
+}
+
+
+
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FEdrathVisualFXAndEpilogueDossierTest,
+    "Edrath.Architecture.VisualFXAndEpilogueDossierTest",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FEdrathVisualFXAndEpilogueDossierTest::RunTest(const FString&)
+{
+    UWorld* TestWorld = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestWorld)
+    {
+        AddError(TEXT("Test world must be created"));
+        return false;
+    }
+
+    UGameInstance* GameInstance = NewObject<UGameInstance>(TestWorld);
+    TestWorld->SetGameInstance(GameInstance);
+    GameInstance->Init();
+
+    UEdrathVisualFXSubsystem* VisualFX = GameInstance->GetSubsystem<UEdrathVisualFXSubsystem>();
+    UEdrathWeatherSubsystem* Weather = GameInstance->GetSubsystem<UEdrathWeatherSubsystem>();
+    UEdrathNarrativeSubsystem* Narrative = GameInstance->GetSubsystem<UEdrathNarrativeSubsystem>();
+
+    TestNotNull(TEXT("UEdrathVisualFXSubsystem must instantiate"), VisualFX);
+    TestNotNull(TEXT("UEdrathWeatherSubsystem must instantiate"), Weather);
+    TestNotNull(TEXT("UEdrathNarrativeSubsystem must instantiate"), Narrative);
+
+    if (VisualFX && Weather && Narrative)
+    {
+        // 1. Weather + Timeline Shader Envelope Blending
+        Weather->SetCanonicalRegionWeather(EEdrathRegion::CrownOfWinter);
+        VisualFX->ApplyTimelineStateVFX(ETimelineState::RejectedTimeline);
+        VisualFX->StepVisualFXBlend(0.5f, 10.0f);
+
+        FEdrathShaderEnvelope Env = VisualFX->GetCurrentEnvelope();
+        TestTrue(TEXT("TimelineDissolveAlpha must blend upward in RejectedTimeline"), Env.TimelineDissolveAlpha > 0.75f);
+        TestTrue(TEXT("FrostGlazeMask must track CrownBlizzard hazard intensity"), Env.FrostGlazeMask > 0.70f);
+
+        VisualFX->TriggerContradictionBreakthroughGlitch(0.92f);
+        TestEqual(TEXT("Breakthrough glitch spike must immediately set ChromaticGlitchIntensity"),
+            VisualFX->GetCurrentEnvelope().ChromaticGlitchIntensity, 0.92f);
+
+        // 2. Compile Epilogue Dossier without 6 twist clues -> Ending D falls back to Ending C (MortalWorld)
+        FEdrathEpilogueDossier LockedDossier = Narrative->CompileEpilogueDossier(EEdrathEndingType::UncomfortableTruth);
+        TestFalse(TEXT("Fourth path must be locked prior to collecting 6 twist clues"), LockedDossier.bFourthPathTruthUnlocked);
+        TestEqual(TEXT("Locked UncomfortableTruth must degrade cleanly to MortalWorld"),
+            LockedDossier.ResolvedEnding, EEdrathEndingType::MortalWorld);
+
+        // Unlock all 6 twist clues and re-evaluate Ending D
+        Narrative->AddOrMutateEvidence(EdrathGameplayTags::Twist1, FText::FromString(TEXT("Twist 1")), true);
+        Narrative->AddOrMutateEvidence(EdrathGameplayTags::Twist2, FText::FromString(TEXT("Twist 2")), true);
+        Narrative->AddOrMutateEvidence(EdrathGameplayTags::Twist3, FText::FromString(TEXT("Twist 3")), true);
+        Narrative->AddOrMutateEvidence(EdrathGameplayTags::Twist4, FText::FromString(TEXT("Twist 4")), true);
+        Narrative->AddOrMutateEvidence(EdrathGameplayTags::Twist5, FText::FromString(TEXT("Twist 5")), true);
+        Narrative->AddOrMutateEvidence(EdrathGameplayTags::Twist6, FText::FromString(TEXT("Twist 6")), true);
+
+        FEdrathEpilogueDossier UnlockedDossier = Narrative->CompileEpilogueDossier(EEdrathEndingType::UncomfortableTruth);
+        TestTrue(TEXT("Fourth path must unlock with 6 twist clues"), UnlockedDossier.bFourthPathTruthUnlocked);
+        TestEqual(TEXT("UncomfortableTruth must resolve with all 6 twist clues"),
+            UnlockedDossier.ResolvedEnding, EEdrathEndingType::UncomfortableTruth);
+        TestEqual(TEXT("DiscoveredTwistClueCount must equal 6"), UnlockedDossier.DiscoveredTwistClueCount, 6);
     }
 
     TestWorld->DestroyWorld(false);
