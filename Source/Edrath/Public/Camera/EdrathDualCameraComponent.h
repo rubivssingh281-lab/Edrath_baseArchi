@@ -63,6 +63,14 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|Camera")
     float GetTransitionAlpha() const { return TransitionAlpha; }
 
+    /** Returns current Exterior Bird's-Eye isometric camera yaw in degrees. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Camera|Exterior")
+    float GetExteriorYawDegrees() const { return ExteriorYawDegrees; }
+
+    /** Returns current Exterior Bird's-Eye arm zoom length. */
+    UFUNCTION(BlueprintPure, Category="Edrath|Camera|Exterior")
+    float GetExteriorTargetArmLength() const { return ExteriorTargetArmLength; }
+
     /** Returns current terrain slope pitch adjustment in degrees. */
     UFUNCTION(BlueprintPure, Category="Edrath|Camera|Terrain")
     float GetTerrainPitchDelta() const { return CurrentTerrainPitchDelta; }
