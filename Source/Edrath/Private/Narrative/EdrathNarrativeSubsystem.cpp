@@ -166,12 +166,17 @@ void UEdrathNarrativeSubsystem::RestoreBuildingBeliefWeights(const TMap<FGamepla
 
 bool UEdrathNarrativeSubsystem::HasUnlockedFourthPath() const
 {
+    return GetDiscoveredTwistClueCount() >= 6;
+}
+
+int32 UEdrathNarrativeSubsystem::GetDiscoveredTwistClueCount() const
+{
     int32 ClueCount = 0;
     for (const TPair<FGameplayTag, FEdrathEvidenceRecord>& Pair : EvidenceRegistry)
     {
         ClueCount += Pair.Value.bIsForeshadowingTwistClue ? 1 : 0;
     }
-    return ClueCount >= 6;
+    return ClueCount;
 }
 
 EEdrathEndingType UEdrathNarrativeSubsystem::EvaluateFinalEnding(EEdrathEndingType PlayerSelectedPhilosophy) const
@@ -181,4 +186,60 @@ EEdrathEndingType UEdrathNarrativeSubsystem::EvaluateFinalEnding(EEdrathEndingTy
         return EEdrathEndingType::MortalWorld;
     }
     return PlayerSelectedPhilosophy;
+}
+
+FEdrathEpilogueDossier UEdrathNarrativeSubsystem::CompileEpilogueDossier(EEdrathEndingType PlayerSelectedPhilosophy) const
+{
+    FEdrathEpilogueDossier Dossier;
+    Dossier.DiscoveredTwistClueCount = GetDiscoveredTwistClueCount();
+    Dossier.bFourthPathTruthUnlocked = HasUnlockedFourthPath();
+    Dossier.ResolvedEnding = EvaluateFinalEnding(PlayerSelectedPhilosophy);
+    Dossier.TotalPrunedFutures = ClockUsagePrunedFuturesCount;
+    Dossier.MaterializedUnwrittenIslandsCount = UnchosenPossibilityTags.Num();
+
+    for (const TPair<FName, FCompanionRelationshipState>& Pair : CompanionStates)
+    {
+        if (Pair.Value.bHasTurnedHostileInNhal)
+        {
+            ++Dossier.HostileDefectedCompanions;
+        }
+        else if (Pair.Value.Loyalty >= 50.0f)
+        {
+            ++Dossier.ReconciledCompanions;
+        }
+    }
+
+    switch (Dossier.ResolvedEnding)
+    {
+        case EEdrathEndingType::PreservedWorld:
+            Dossier.EndingHeadline = FText::FromString(TEXT("Ending A: The Preserved World"));
+            Dossier.WorldConsequenceSummary = FText::Format(
+                NSLOCTEXT("EdrathEnding", "PreservedFmt", "The Conscious Archive remains standing across {0} pruned futures. Cities endure in curated serenity while rebellious timelines fade."),
+                FText::AsNumber(Dossier.TotalPrunedFutures));
+            break;
+
+        case EEdrathEndingType::UnwrittenWorld:
+            Dossier.EndingHeadline = FText::FromString(TEXT("Ending B: The Unwritten World"));
+            Dossier.WorldConsequenceSummary = FText::Format(
+                NSLOCTEXT("EdrathEnding", "UnwrittenFmt", "The Archive shattered, flooding reality with {0} unchosen islands and resurrecting erased Nhal lineages into chaotic freedom."),
+                FText::AsNumber(Dossier.MaterializedUnwrittenIslandsCount));
+            break;
+
+        case EEdrathEndingType::UncomfortableTruth:
+            Dossier.EndingHeadline = FText::FromString(TEXT("Ending D: The Uncomfortable Truth"));
+            Dossier.WorldConsequenceSummary = FText::Format(
+                NSLOCTEXT("EdrathEnding", "TruthFmt", "Armed with all {0} twist truths, Kael decentralized the Archive's authority across humanity. With {1} loyal allies, tomorrow is raw and contested."),
+                FText::AsNumber(Dossier.DiscoveredTwistClueCount),
+                FText::AsNumber(Dossier.ReconciledCompanions));
+            break;
+
+        case EEdrathEndingType::MortalWorld:
+        default:
+            Dossier.EndingHeadline = FText::FromString(TEXT("Ending C: The Mortal World"));
+            Dossier.WorldConsequenceSummary = FText::FromString(
+                TEXT("The Black Clock falls silent. Time flows irreversibly once more, leaving the dead at rest and tomorrow genuinely unknown."));
+            break;
+    }
+
+    return Dossier;
 }

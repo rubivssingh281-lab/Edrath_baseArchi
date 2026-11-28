@@ -4,6 +4,7 @@
 #include "Character/KaelCharacter.h"
 #include "Core/EdrathHardwareOptimizationSubsystem.h"
 #include "Core/EdrathTelemetrySubsystem.h"
+#include "Core/EdrathVisualFXSubsystem.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -70,6 +71,11 @@ bool UBlackClockComponent::TogglePossibilityShift(EEdrathRegion CurrentRegion)
             GameInstance->GetSubsystem<UEdrathHardwareOptimizationSubsystem>())
         {
             HardwareOptimization->OptimizeTimelineMemoryFootprint(ActiveTimelineState);
+        }
+        if (UEdrathVisualFXSubsystem* VisualFX = GameInstance->GetSubsystem<UEdrathVisualFXSubsystem>())
+        {
+            VisualFX->ApplyTimelineStateVFX(ActiveTimelineState);
+            VisualFX->UpdateClockInstabilityDesaturation(MaxClockStability > 0.0f ? (CurrentClockStability / MaxClockStability) : 1.0f);
         }
     }
 

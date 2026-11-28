@@ -3,6 +3,7 @@
 #include "Components/Button.h"
 #include "Core/EdrathGameplayTags.h"
 #include "Core/EdrathTelemetrySubsystem.h"
+#include "Core/EdrathVisualFXSubsystem.h"
 #include "Narrative/EdrathForensicSubsystem.h"
 #include "Narrative/EdrathNarrativeSubsystem.h"
 #include "Engine/World.h"
@@ -153,6 +154,10 @@ FContradictionResolutionResult UForensicContradictionWidget::AttemptResolveContr
                 if (UEdrathTelemetrySubsystem* Telemetry = GI->GetSubsystem<UEdrathTelemetrySubsystem>())
                 {
                     Telemetry->RecordNarrativeChoice(Rule.BreakthroughTag, TEXT("ContradictionResolved"));
+                }
+                if (UEdrathVisualFXSubsystem* VisualFX = GI->GetSubsystem<UEdrathVisualFXSubsystem>())
+                {
+                    VisualFX->TriggerContradictionBreakthroughGlitch(BreakthroughChromaticGlitchIntensity);
                 }
                 if (Rule.bBreaksSettlementLoop)
                 {

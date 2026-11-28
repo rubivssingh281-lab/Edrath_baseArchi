@@ -213,3 +213,36 @@ struct FEdrathClueMatrixNode
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Forensics")
     FGameplayTag LinkedBreakthroughTag;
 };
+
+USTRUCT(BlueprintType)
+struct FEdrathEpilogueDossier
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    EEdrathEndingType ResolvedEnding = EEdrathEndingType::None;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    bool bFourthPathTruthUnlocked = false;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    int32 DiscoveredTwistClueCount = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    int32 TotalPrunedFutures = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    int32 HostileDefectedCompanions = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    int32 ReconciledCompanions = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    int32 MaterializedUnwrittenIslandsCount = 0;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    FText EndingHeadline;
+
+    UPROPERTY(BlueprintReadOnly, Category="Edrath|Endings")
+    FText WorldConsequenceSummary;
+};

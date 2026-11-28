@@ -123,8 +123,15 @@ public:
     UFUNCTION(BlueprintPure, Category="Edrath|Narrative|Endings")
     bool HasUnlockedFourthPath() const;
 
+    UFUNCTION(BlueprintPure, Category="Edrath|Narrative|Endings")
+    int32 GetDiscoveredTwistClueCount() const;
+
     UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|Endings")
     EEdrathEndingType EvaluateFinalEnding(EEdrathEndingType PlayerSelectedPhilosophy) const;
+
+    /** Compiles a full narrative consequence dossier evaluating endings, companions, twists, and pruned timelines. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Narrative|Endings")
+    FEdrathEpilogueDossier CompileEpilogueDossier(EEdrathEndingType PlayerSelectedPhilosophy) const;
 
     UPROPERTY(BlueprintAssignable, Category="Edrath|Narrative")
     FOnSettlementLoopReset OnSettlementLoopReset;
