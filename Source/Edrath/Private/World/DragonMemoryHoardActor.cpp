@@ -46,3 +46,23 @@ bool ADragonMemoryHoardActor::ResolveHoardChoice(bool bReturnMemoriesToCitizens)
     OnDragonHoardResolved.Broadcast(bReturnMemoriesToCitizens);
     return true;
 }
+
+bool ADragonMemoryHoardActor::CanInteract_Implementation(AActor* Interactor) const
+{
+    return !bIsResolved && IsValid(Interactor);
+}
+
+FText ADragonMemoryHoardActor::GetInteractionPrompt_Implementation(AActor*) const
+{
+    return FText::FromString(TEXT("[E] Inspect Crystallized Memory Hoard"));
+}
+
+FText ADragonMemoryHoardActor::GetInteractionTargetName_Implementation() const
+{
+    return FText::FromString(TEXT("Crystallized Memory Hoard"));
+}
+
+bool ADragonMemoryHoardActor::ExecuteInteraction_Implementation(AActor*)
+{
+    return ResolveHoardChoice(false);
+}

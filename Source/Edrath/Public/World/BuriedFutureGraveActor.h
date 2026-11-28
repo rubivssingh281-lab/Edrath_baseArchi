@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameplayTagContainer.h"
+#include "Core/EdrathInteractableInterface.h"
 #include "BuriedFutureGraveActor.generated.h"
 
 class UStaticMeshComponent;
@@ -17,7 +18,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGraveExhumedSignature, bool, bLov
  * Exhuming it mutates the family's memory state between loving father and violent stranger.
  */
 UCLASS()
-class EDRATH_API ABuriedFutureGraveActor : public AActor
+class EDRATH_API ABuriedFutureGraveActor : public AActor, public IEdrathInteractableInterface
 {
     GENERATED_BODY()
 
@@ -51,6 +52,12 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Edrath|Quests")
     bool IsLovingFatherAnchor() const { return bLovingFatherAnchor; }
+
+    // IEdrathInteractableInterface
+    virtual bool CanInteract_Implementation(AActor* Interactor) const override;
+    virtual FText GetInteractionPrompt_Implementation(AActor* Interactor) const override;
+    virtual FText GetInteractionTargetName_Implementation() const override;
+    virtual bool ExecuteInteraction_Implementation(AActor* Interactor) override;
 
     UPROPERTY(BlueprintAssignable, Category="Edrath|Quests")
     FOnGraveExhumedSignature OnGraveExhumed;

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Core/EdrathTypes.h"
+#include "Core/EdrathInteractableInterface.h"
 #include "ForensicClueActor.generated.h"
 
 class AActor;
@@ -13,7 +14,7 @@ class UEdrathNarrativeSubsystem;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnForensicClueInspected, FGameplayTag, EvidenceTag, AActor*, Inspector);
 
 UCLASS()
-class EDRATH_API AForensicClueActor : public AActor
+class EDRATH_API AForensicClueActor : public AActor, public IEdrathInteractableInterface
 {
     GENERATED_BODY()
 
@@ -57,6 +58,12 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Edrath|Forensics")
     bool HasBeenInspected() const { return bHasBeenInspected; }
+
+    // IEdrathInteractableInterface
+    virtual bool CanInteract_Implementation(AActor* Interactor) const override;
+    virtual FText GetInteractionPrompt_Implementation(AActor* Interactor) const override;
+    virtual FText GetInteractionTargetName_Implementation() const override;
+    virtual bool ExecuteInteraction_Implementation(AActor* Interactor) override;
 
 protected:
     UFUNCTION()

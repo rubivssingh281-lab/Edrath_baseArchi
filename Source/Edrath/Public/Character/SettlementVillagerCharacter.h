@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GameplayTagContainer.h"
+#include "Core/EdrathInteractableInterface.h"
 #include "SettlementVillagerCharacter.generated.h"
 
 class USphereComponent;
@@ -16,7 +17,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnVillagerSpokenSignature, class
  * but possesses zero recollection of the preceding 7 days due to temporal loop reset.
  */
 UCLASS()
-class EDRATH_API ASettlementVillagerCharacter : public ACharacter
+class EDRATH_API ASettlementVillagerCharacter : public ACharacter, public IEdrathInteractableInterface
 {
     GENERATED_BODY()
 
@@ -61,6 +62,12 @@ public:
 
     UFUNCTION()
     void HandleSettlementLoopReset(int32 TotalLoopResets);
+
+    // IEdrathInteractableInterface
+    virtual bool CanInteract_Implementation(AActor* Interactor) const override;
+    virtual FText GetInteractionPrompt_Implementation(AActor* Interactor) const override;
+    virtual FText GetInteractionTargetName_Implementation() const override;
+    virtual bool ExecuteInteraction_Implementation(AActor* Interactor) override;
 
 private:
     UEdrathNarrativeSubsystem* GetNarrativeSubsystem() const;

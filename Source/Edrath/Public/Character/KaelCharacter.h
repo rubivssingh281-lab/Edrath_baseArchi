@@ -13,6 +13,7 @@ class UBlackClockComponent;
 class UEdrathEchoCombatComponent;
 class UKaelModularRigComponent;
 class UKaelTerrainAdaptationComponent;
+class UKaelInteractionScannerComponent;
 
 UCLASS()
 class EDRATH_API AKaelCharacter : public ACharacter
@@ -46,6 +47,9 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Edrath|Kael")
     TObjectPtr<UKaelTerrainAdaptationComponent> TerrainAdaptationComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Edrath|Kael")
+    TObjectPtr<UKaelInteractionScannerComponent> InteractionScannerComponent;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Edrath|Kael")
     EEdrathRegion CurrentRegion = EEdrathRegion::Veyl;
@@ -112,4 +116,7 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Edrath|Kael")
     UKaelTerrainAdaptationComponent* GetTerrainAdaptationComponent() const { return TerrainAdaptationComponent; }
+
+    UFUNCTION(BlueprintPure, Category="Edrath|Kael")
+    UKaelInteractionScannerComponent* GetInteractionScannerComponent() const { return InteractionScannerComponent; }
 };

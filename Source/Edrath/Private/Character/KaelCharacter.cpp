@@ -6,6 +6,7 @@
 #include "Camera/EdrathDualCameraComponent.h"
 #include "Character/KaelModularRigComponent.h"
 #include "Character/KaelTerrainAdaptationComponent.h"
+#include "Character/KaelInteractionScannerComponent.h"
 #include "Core/EdrathAudioSubsystem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
@@ -26,6 +27,7 @@ AKaelCharacter::AKaelCharacter()
     EchoCombatComponent = CreateDefaultSubobject<UEdrathEchoCombatComponent>(TEXT("EchoCombatComponent"));
     ModularRigComponent = CreateDefaultSubobject<UKaelModularRigComponent>(TEXT("ModularRigComponent"));
     TerrainAdaptationComponent = CreateDefaultSubobject<UKaelTerrainAdaptationComponent>(TEXT("TerrainAdaptationComponent"));
+    InteractionScannerComponent = CreateDefaultSubobject<UKaelInteractionScannerComponent>(TEXT("InteractionScannerComponent"));
 }
 
 void AKaelCharacter::BeginPlay()

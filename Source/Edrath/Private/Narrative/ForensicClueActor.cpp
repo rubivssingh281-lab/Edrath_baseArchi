@@ -4,6 +4,7 @@
 #include "Core/EdrathTypes.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
+#include "Narrative/EdrathForensicSubsystem.h"
 #include "Narrative/EdrathNarrativeSubsystem.h"
 
 AForensicClueActor::AForensicClueActor()
@@ -66,6 +67,13 @@ bool AForensicClueActor::Inspect(AActor* Inspector)
     {
         Narrative->AddOrMutateEvidence(EvidenceTag, CurrentDescription, bIsTwistClue);
     }
+    if (GetWorld() && GetWorld()->GetGameInstance())
+    {
+        if (UEdrathForensicSubsystem* Forensics = GetWorld()->GetGameInstance()->GetSubsystem<UEdrathForensicSubsystem>())
+        {
+            Forensics->RegisterDiscoveredClue(EvidenceTag, EEdrathRegion::Veyl, CurrentDescription);
+        }
+    }
     return true;
 }
 
@@ -105,4 +113,24 @@ void AForensicClueActor::HandleTimelineStateShifted(ETimelineState NewState, FVe
     {
         ApplyDescriptionForTimeline(NewState);
     }
+}
+
+bool AForensicClueActor::CanInteract_Implementation(AActor* Interactor) const
+{
+    return IsInspectionAllowed(Interactor);
+}
+
+FText AForensicClueActor::GetInteractionPrompt_Implementation(AActor*) const
+{
+    return FText::FromString(bHasBeenInspected ? TEXT("[E] Re-Examine Evidence") : TEXT("[E] Inspect Forensic Clue"));
+}
+
+FText AForensicClueActor::GetInteractionTargetName_Implementation() const
+{
+    return EvidenceTag.IsValid() ? FText::FromName(EvidenceTag.GetTagName()) : FText::FromString(TEXT("Forensic Clue"));
+}
+
+bool AForensicClueActor::ExecuteInteraction_Implementation(AActor* Interactor)
+{
+    return Inspect(Interactor);
 }

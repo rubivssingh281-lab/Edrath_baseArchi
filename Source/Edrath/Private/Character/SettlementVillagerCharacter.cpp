@@ -95,3 +95,26 @@ UEdrathNarrativeSubsystem* ASettlementVillagerCharacter::GetNarrativeSubsystem()
     }
     return nullptr;
 }
+
+bool ASettlementVillagerCharacter::CanInteract_Implementation(AActor* Interactor) const
+{
+    return IsValid(Interactor);
+}
+
+FText ASettlementVillagerCharacter::GetInteractionPrompt_Implementation(AActor*) const
+{
+    return FText::Format(
+        NSLOCTEXT("EdrathInteraction", "SpeakVillagerPrompt", "[E] Speak with {0}"),
+        FText::FromName(VillagerName));
+}
+
+FText ASettlementVillagerCharacter::GetInteractionTargetName_Implementation() const
+{
+    return FText::FromName(VillagerName);
+}
+
+bool ASettlementVillagerCharacter::ExecuteInteraction_Implementation(AActor* Interactor)
+{
+    InteractWithVillager(Interactor);
+    return true;
+}

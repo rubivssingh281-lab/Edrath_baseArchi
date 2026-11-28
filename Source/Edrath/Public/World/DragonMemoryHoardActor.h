@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameplayTagContainer.h"
+#include "Core/EdrathInteractableInterface.h"
 #include "DragonMemoryHoardActor.generated.h"
 
 class UStaticMeshComponent;
@@ -17,7 +18,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDragonHoardResolvedSignature, boo
  * Returning memories restores citizens' minds but unleashes the dragon's catastrophic wrath.
  */
 UCLASS()
-class EDRATH_API ADragonMemoryHoardActor : public AActor
+class EDRATH_API ADragonMemoryHoardActor : public AActor, public IEdrathInteractableInterface
 {
     GENERATED_BODY()
 
@@ -48,6 +49,12 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Edrath|Quests")
     bool IsDragonApocalyptic() const { return bDragonApocalyptic; }
+
+    // IEdrathInteractableInterface
+    virtual bool CanInteract_Implementation(AActor* Interactor) const override;
+    virtual FText GetInteractionPrompt_Implementation(AActor* Interactor) const override;
+    virtual FText GetInteractionTargetName_Implementation() const override;
+    virtual bool ExecuteInteraction_Implementation(AActor* Interactor) override;
 
     UPROPERTY(BlueprintAssignable, Category="Edrath|Quests")
     FOnDragonHoardResolvedSignature OnDragonHoardResolved;

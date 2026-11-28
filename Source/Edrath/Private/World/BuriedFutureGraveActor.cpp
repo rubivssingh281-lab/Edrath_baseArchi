@@ -49,3 +49,23 @@ bool ABuriedFutureGraveActor::ExhumeFutureGrave(bool bAnchorLovingFatherMemory)
     OnGraveExhumed.Broadcast(bAnchorLovingFatherMemory);
     return true;
 }
+
+bool ABuriedFutureGraveActor::CanInteract_Implementation(AActor* Interactor) const
+{
+    return !bIsExhumed && IsValid(Interactor);
+}
+
+FText ABuriedFutureGraveActor::GetInteractionPrompt_Implementation(AActor*) const
+{
+    return FText::FromString(TEXT("[E] Exhume Future Grave"));
+}
+
+FText ABuriedFutureGraveActor::GetInteractionTargetName_Implementation() const
+{
+    return FText::FromString(TEXT("Future-Dated Grave Mound"));
+}
+
+bool ABuriedFutureGraveActor::ExecuteInteraction_Implementation(AActor*)
+{
+    return ExhumeFutureGrave(true);
+}
