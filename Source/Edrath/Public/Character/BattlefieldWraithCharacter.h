@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Core/EdrathTypes.h"
+#include "Core/EdrathChronalCombatInterface.h"
 #include "GameplayTagContainer.h"
 #include "BattlefieldWraithCharacter.generated.h"
 
@@ -18,7 +19,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWraithStaggeredSignature, class 
  * to Kael's 120-frame Black Clock Echo Strikes (TriggerEchoStrike).
  */
 UCLASS()
-class EDRATH_API ABattlefieldWraithCharacter : public ACharacter
+class EDRATH_API ABattlefieldWraithCharacter : public ACharacter, public IEdrathChronalCombatInterface
 {
     GENERATED_BODY()
 
@@ -78,6 +79,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Edrath|Combat")
     void BindToDirector(AAct1PreAlphaSliceDirector* InDirector);
+
+    // IEdrathChronalCombatInterface
+    virtual float ReceiveChronalHit_Implementation(float DamageAmount, float PoiseDamage, bool bIsEchoStrike, AActor* InstigatorActor, const FVector& HitLocation) override;
 
 private:
     float StaggerRemainingTime = 0.0f;

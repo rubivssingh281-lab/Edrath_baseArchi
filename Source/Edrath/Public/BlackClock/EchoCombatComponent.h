@@ -38,6 +38,10 @@ public:
     UFUNCTION(BlueprintCallable, Category="Edrath|BlackClock|EchoCombat")
     int32 PerformGhostStrikePhysicsSweep(const FEchoActionFrame& EchoFrame, float SweepRadius = 90.0f, float ReachDistance = 140.0f);
 
+    /** Directly delivers a sword slash, parry counter, or Echo Strike to an actor implementing IEdrathChronalCombatInterface. */
+    UFUNCTION(BlueprintCallable, Category="Edrath|Combat")
+    float DeliverChronalStrikeToTarget(AActor* TargetActor, float BaseDamage, float BasePoiseDamage, bool bIsEchoStrike);
+
     UFUNCTION(BlueprintPure, Category="Edrath|BlackClock|EchoCombat")
     int32 GetLastGhostHitCount() const { return LastGhostHitCount; }
 

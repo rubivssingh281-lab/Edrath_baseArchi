@@ -1,5 +1,6 @@
 #include "BlackClock/EchoCombatComponent.h"
 #include "BlackClock/EdrathCombatFeedbackSubsystem.h"
+#include "Core/EdrathChronalCombatInterface.h"
 #include "Character/KaelCharacter.h"
 #include "BlackClock/BlackClockComponent.h"
 #include "Engine/World.h"
@@ -195,16 +196,28 @@ int32 UEdrathEchoCombatComponent::PerformGhostStrikePhysicsSweep(const FEchoActi
         }
         const float CurrentTime = GetWorld()->GetTimeSeconds();
 
+        TSet<AActor*> ProcessedActors;
         for (const FHitResult& Hit : HitResults)
         {
             AActor* HitActor = Hit.GetActor();
-            if (HitActor && HitActor != GetOwner())
+            if (HitActor && HitActor != GetOwner() && !ProcessedActors.Contains(HitActor))
             {
+                ProcessedActors.Add(HitActor);
                 LastGhostHitCount++;
                 if (Feedback)
                 {
                     const FEdrathHitStopProfile Profile = Feedback->TriggerHitStop(EEdrathImpactSeverity::EchoResonance, CurrentTime);
                     Feedback->ApplyPerActorHitStopDilation(HitActor, Profile.TimeDilationScale, Profile.DurationSeconds);
+                }
+                if (HitActor->Implements<UEdrathChronalCombatInterface>())
+                {
+                    IEdrathChronalCombatInterface::Execute_ReceiveChronalHit(
+                        HitActor,
+                        DamageToDeal,
+                        DamageToDeal * 0.85f,
+                        true,
+                        GetOwner(),
+                        Hit.ImpactPoint);
                 }
                 if (OnEchoGhostSweepHit.IsBound())
                 {
@@ -215,6 +228,42 @@ int32 UEdrathEchoCombatComponent::PerformGhostStrikePhysicsSweep(const FEchoActi
     }
 
     return LastGhostHitCount;
+}
+
+float UEdrathEchoCombatComponent::DeliverChronalStrikeToTarget(AActor* TargetActor, float BaseDamage, float BasePoiseDamage, bool bIsEchoStrike)
+{
+    if (!IsValid(TargetActor) || TargetActor == GetOwner())
+    {
+        return 0.0f;
+    }
+
+    if (UWorld* World = GetWorld())
+    {
+        if (UGameInstance* GI = World->GetGameInstance())
+        {
+            if (UEdrathCombatFeedbackSubsystem* Feedback = GI->GetSubsystem<UEdrathCombatFeedbackSubsystem>())
+            {
+                const EEdrathImpactSeverity Severity = bIsEchoStrike
+                    ? EEdrathImpactSeverity::EchoResonance
+                    : (BaseDamage >= 30.0f ? EEdrathImpactSeverity::HeavyStrike : EEdrathImpactSeverity::LightSlash);
+                const FEdrathHitStopProfile Profile = Feedback->TriggerHitStop(Severity, World->GetTimeSeconds());
+                Feedback->ApplyPerActorHitStopDilation(TargetActor, Profile.TimeDilationScale, Profile.DurationSeconds);
+            }
+        }
+    }
+
+    if (TargetActor->Implements<UEdrathChronalCombatInterface>())
+    {
+        return IEdrathChronalCombatInterface::Execute_ReceiveChronalHit(
+            TargetActor,
+            BaseDamage,
+            BasePoiseDamage,
+            bIsEchoStrike,
+            GetOwner(),
+            TargetActor->GetActorLocation());
+    }
+
+    return 0.0f;
 }
 
 void UEdrathEchoCombatComponent::SpawnVisualGhostStrike(const FEchoActionFrame& EchoFrame)

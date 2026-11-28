@@ -92,3 +92,13 @@ void AFirstArchivistBossCharacter::AdvancePhase(EArchivistBossPhase NewPhase)
         OnPhaseChanged.Broadcast(CurrentPhase);
     }
 }
+
+float AFirstArchivistBossCharacter::ReceiveChronalHit_Implementation(
+    float DamageAmount,
+    float,
+    bool bIsEchoStrike,
+    AActor*,
+    const FVector&)
+{
+    return ApplyBossDamage(DamageAmount, bIsEchoStrike);
+}

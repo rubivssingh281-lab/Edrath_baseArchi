@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Core/EdrathTypes.h"
+#include "Core/EdrathChronalCombatInterface.h"
 #include "FirstArchivistBossCharacter.generated.h"
 
 class UStaticMeshComponent;
@@ -27,7 +28,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnArchivistDefeatedEventSignature);
  * and reality-dissolving strike capabilities. Defeating him strips the reality-pruning safeguards.
  */
 UCLASS()
-class EDRATH_API AFirstArchivistBossCharacter : public ACharacter
+class EDRATH_API AFirstArchivistBossCharacter : public ACharacter, public IEdrathChronalCombatInterface
 {
     GENERATED_BODY()
 
@@ -68,6 +69,9 @@ public:
 
     UFUNCTION(BlueprintPure, Category="Edrath|Boss")
     bool IsDefeated() const { return CurrentPhase == EArchivistBossPhase::Defeated; }
+
+    // IEdrathChronalCombatInterface
+    virtual float ReceiveChronalHit_Implementation(float DamageAmount, float PoiseDamage, bool bIsEchoStrike, AActor* InstigatorActor, const FVector& HitLocation) override;
 
     UPROPERTY(BlueprintAssignable, Category="Edrath|Boss")
     FOnArchivistPhaseChangedSignature OnPhaseChanged;

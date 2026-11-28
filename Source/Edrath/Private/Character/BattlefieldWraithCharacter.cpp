@@ -151,3 +151,22 @@ void ABattlefieldWraithCharacter::BindToDirector(AAct1PreAlphaSliceDirector* InD
 {
     BoundDirector = InDirector;
 }
+
+float ABattlefieldWraithCharacter::ReceiveChronalHit_Implementation(
+    float DamageAmount,
+    float,
+    bool bIsEchoStrike,
+    AActor* InstigatorActor,
+    const FVector&)
+{
+    const float PrevHealth = CurrentHealth;
+    if (bIsEchoStrike)
+    {
+        TakeEchoStrikeDamage(DamageAmount, InstigatorActor, 1.2f);
+    }
+    else
+    {
+        TakeSlashDamage(DamageAmount, InstigatorActor);
+    }
+    return FMath::Max(0.0f, PrevHealth - CurrentHealth);
+}
